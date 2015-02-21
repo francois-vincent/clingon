@@ -9,7 +9,7 @@ Compatible python 2 and 3
 """
 
 from __future__ import print_function, absolute_import
-from future.utils import listitems
+from future.utils import listitems, iteritems
 from past.builtins import basestring
 
 from collections import Sequence
@@ -88,7 +88,7 @@ class Clizer(object):
         # get required args as a list and optional args as a dict (with default values)
         nb_args, len_defaults = len(argspec.args), len(defaults)
         self.reqargs = argspec.args[:nb_args - len_defaults]
-        options = OrderedDict(zip(argspec.args[nb_args - len_defaults:], defaults))
+        options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
         # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
         # make an equivalence dict from line cmd style (--file-name) to python style (file_name) args
@@ -103,7 +103,7 @@ class Clizer(object):
         mismatch = set(self.options_aliases) - set(options)
         if mismatch:
             raise ValueError("This option does not exists so can't be given an alias: " + mismatch.pop())
-        for k in argspec.args[-len(defaults):]:
+        for k in options:
             if k not in self.options_aliases and len(k) > 1:
                 self.options_aliases[k] = (k[0],)
             # inject aliases into dicts
@@ -325,6 +325,8 @@ def clize(*args, **kwargs):
     where aliases is a dictionary, key=python parameter of decorated function, value=tuple of aliases
     """
 
+    kwargs = dict((k.lower(), v) for k, v in iteritems(kwargs))
+
     class mycli(Clizer):
         SYSTEM_EXIT = True
         options_aliases = kwargs
@@ -347,79 +349,92 @@ def set_variables(**kwargs):
     return f
 
 
-if __name__ == '__main__':
-
-    @clize(make_link=('m', 's', 'l'))
-    @set_variables(VERSION=CLINGON_VERSION)
-    def make_script(python_script_name, path='', target_name='', glob=False, make_link=False,
-                    override_target=False, no_check_shebang=False):
-        """v{VERSION}
-        This script makes a command line script out of a python file.
-        For example, 'clingon script.py' will copy script.py to:
-        - ~/bin/script, (default),
-        - /usr/local/bin/script if option global-script is set (requires sudo),
-        - path if path is specfied.
-        and then set the script as executable (without the .py extension)
-        You can clingon clingon itself !
-        """
-        source = os.path.abspath(python_script_name)
-        if not os.path.exists(source):
-            Clizer._write_error("Could not find source '%s', aborting" % source)
-            return 1
-        if glob and path:
-            Clizer._write_error("You cannot specify --path and --global-script at the same time")
-            return 1
-        dest_dir = os.path.normpath(os.path.expanduser(path or '/usr/local/bin' if glob else '~/bin'))
-        target = os.path.join(dest_dir,
-                      target_name if target_name else os.path.splitext(os.path.basename(source))[0])
-        if DEBUG:
-            print('Source, target:', source, target)
-
-        target_exists = os.path.exists(target)
-        if target_exists:
-            def same_file_same_type(source, target):
-                if os.path.islink(target):
-                    return make_link and os.path.samefile(source, target)
-                else:
-                    return not make_link and (open(source, 'rb').read() == open(target, 'rb').read())
-            if same_file_same_type(source, target):
-                print("Target '%s' already created, nothing to do" % target)
-                return
-            elif not override_target:
-                Clizer._write_error("Target '%s' already exists, aborting" % target)
-                return 1
-
-        if not os.path.isdir(dest_dir):
-            # Create directory but only if father dir exists and user has rights
-            if os.access(os.path.basename(dest_dir), os.W_OK):
-                os.system("mkdir %s" % dest_dir)
-            else:
-                Clizer._write_error("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir)
-                return 1
-
-        if not no_check_shebang:
-            # Check that file starts with python shebang (#!/usr/bin/env python)
-            import re
-            if re.match(r'#!\s*/usr/bin/env\s+python', open(source).readline()):
-                Clizer._write_error("Your script's first line should be '#!/usr/bin/env python', aborting")
-                return 1
-        if make_link and not os.access(source, os.X_OK):
-            Clizer._write_error("Source '%s' must be set as executable before symlinking, aborting" % source)
-            return 1
-
-        # Now it's time to copy or symlink file
+def make_script(python_script_name, path='', target_name='', GLOBAL=False, make_link=False,
+                force=False, remove=False, no_check_shebang=False):
+    """v{VERSION}
+    This script makes a command line script out of a python file.
+    For example, 'clingon script.py' will copy script.py to:
+    - ~/bin/script, (default),
+    - /usr/local/bin/script if option global-script is set (requires sudo),
+    - path if path is specfied.
+    and then set the script as executable (without the .py extension)
+    """
+    if GLOBAL and path:
+        Clizer._write_error("You cannot specify --path and --global-script at the same time")
+        return 1
+    source = os.path.abspath(python_script_name)
+    dest_dir = os.path.normpath(os.path.expanduser(path or '/usr/local/bin' if GLOBAL else '~/bin'))
+    target = os.path.join(dest_dir,
+                  target_name if target_name else os.path.splitext(os.path.basename(source))[0])
+    target_exists = os.path.exists(target)
+    if remove:
         if target_exists:
             os.unlink(target)
-        if make_link:
-            os.symlink(source, target)
-            os.system("chmod ug+x %s" % target)
-            print('Script %s as been symlinked to %s' % (source, target))
+            print("Script '%s' removed" % target)
         else:
-            import shutil
-            shutil.copyfile(source, target)
-            os.system("chmod a+x %s" % target)
-            print('Script %s as been copied to %s' % (source, target))
-        # check PATH and advise user to update it if relevant
-        path_env = os.environ.get('PATH')
-        if not path_env or dest_dir not in path_env:
-            print("Please add your local bin path [%s] to your environment PATH" % dest_dir)
+            print("Script '%s' not found, nothing to do" % target)
+        return
+    if not os.path.exists(source):
+        Clizer._write_error("Could not find source '%s', aborting" % source)
+        return 1
+    if DEBUG:
+        print('Source, target:', source, target)
+
+    if target_exists:
+        def same_file_same_type(source, target):
+            if os.path.islink(target):
+                return make_link and os.path.samefile(source, target)
+            else:
+                return not make_link and (open(source, 'rb').read() == open(target, 'rb').read())
+        if same_file_same_type(source, target):
+            print("Target '%s' already created, nothing to do" % target)
+            return
+        elif not force:
+            Clizer._write_error("Target '%s' already exists, aborting" % target)
+            return 1
+
+    if not os.path.isdir(dest_dir):
+        # Create directory but only if father dir exists and user has rights
+        if os.access(os.path.basename(dest_dir), os.W_OK):
+            os.system("mkdir %s" % dest_dir)
+        else:
+            Clizer._write_error("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir)
+            return 1
+
+    if not no_check_shebang:
+        # Check that file starts with python shebang (#!/usr/bin/env python)
+        import re
+        if not re.match(r'#!\s*/usr/bin/env\s+python', open(source).readline()):
+            Clizer._write_error("Your script's first line should be '#!/usr/bin/env python', aborting")
+            return 1
+
+    # Now it's time to copy or symlink file
+    if target_exists:
+        os.unlink(target)
+    import stat
+    perms = stat.S_IXUSR | stat.S_IXGRP
+    if os.getuid() == 0:
+        perms |= stat.S_IXOTH
+    if make_link:
+        st = os.stat(source)
+        if st.st_mode & perms != perms:
+            os.chmod(source, st.st_mode | perms)
+        os.symlink(source, target)
+        st = os.stat(target)
+        os.chmod(target, st.st_mode | perms)
+        print('Script %s as been symlinked to %s' % (source, target))
+    else:
+        import shutil
+        shutil.copyfile(source, target)
+        st = os.stat(target)
+        os.chmod(target, st.st_mode | perms)
+        print('Script %s as been copied to %s' % (source, target))
+    # check PATH and advise user to update it if relevant
+    path_env = os.environ.get('PATH')
+    if not path_env or dest_dir not in path_env:
+        print("Please add your local bin path [%s] to your environment PATH" % dest_dir)
+
+
+if __name__ == '__main__':
+
+    clize(make_link=('m', 's', 'l'), force=('f', 'o'))(set_variables(VERSION=CLINGON_VERSION)(make_script))

@@ -45,7 +45,7 @@ Basic example
 .. code:: python
 
     # file script.py
-    import clingon
+    from clingon import clingon
 
     @clingon.clize_and_run
     def my_script(p1, p2,
@@ -111,7 +111,7 @@ some keywords to your decorator:
 .. code:: python
 
     # file script2.py
-    import clingon
+    from clingon import clingon
 
     @clingon.clize_and_run(first_option=('first', 'f'), last_option=('last', 'l'))
     def my_script(p1, p2,
@@ -190,7 +190,7 @@ example
 .. code:: python
 
     # file script.py
-    import clingon
+    from clingon import clingon
 
     @clingon.clize_and_run
     @clingon.set_variables(VERSION=1.2.3)
@@ -214,7 +214,7 @@ As a bonus, clingon can also turn your brand new python script into a
 command available locally or globally. Just run the clingon module on
 your script, with option --path or --global-script:
 
-``python clingon.py path/to/your/script [-g][-p path][-o]``
+``python clingon.py path/to/your/script [-g][-p path][-o][-s][-n]``
 
 This will copy your script to 'path' if specified, or to ~/bin or
 /usr/local/bin (depending on the -g option) and set the proper execution
@@ -225,11 +225,9 @@ Of course, you can clingon clingon itself !
 Licence
 ~~~~~~~
 
-``(c)`` François Vincent [francois.vincent01@gmail.comm]
-
 BSD license
 
 Author
 ~~~~~~
 
-François Vincent []
+``(c)`` François Vincent [https://github.com/francois-vincent]

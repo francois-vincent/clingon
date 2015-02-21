@@ -99,7 +99,7 @@ def clized_variables_one_short(p1, p2, option='default_value'):
 # ---------- end of decorated functions under test --------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class TestClinngon(unittest.TestCase):
+class TestDecoratorBasic(unittest.TestCase):
 
     def test_decorator_multiple_args(self):
         with self.assertRaises(ValueError) as cm:
@@ -198,7 +198,7 @@ class TestClinngon(unittest.TestCase):
 
 
 @mock.patch('sys.exit')
-class TestDeco(unittest.TestCase):
+class TestDecorator(unittest.TestCase):
     def test_default_no_option(self, sys_exit):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2')
@@ -433,6 +433,27 @@ class TestDeco(unittest.TestCase):
         error = err.getvalue()
         self.assertIn('version 1.2.3 from', error)
         sys_exit.assert_called_with(0)
+
+
+class TestMakeScript(unittest.TestCase):
+
+    def test_local(self):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, path='/usr/bin')
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), '')
+        self.assertEqual(err.getvalue(), 'You cannot specify --path and --global-script at the same time\n')
+
+    @mock.patch('os.path.exists')
+    @mock.patch('os.unlink')
+    def test_remove(self, os_unlink, os_path_exists):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, remove=True)
+        self.assertIsNone(ret)
+        self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' removed\n")
+        self.assertEqual(err.getvalue(), '')
+        os_unlink.assert_called_with('/usr/local/bin/clingon')
+        os_path_exists.assert_called_with('/usr/local/bin/clingon')
 
 
 if __name__ == '__main__':
