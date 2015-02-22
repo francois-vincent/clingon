@@ -47,7 +47,7 @@ Basic example
     # file script.py
     from clingon import clingon
 
-    @clingon.clize_and_run
+    @clingon.clize
     def my_script(p1, p2,
                   first_option='default_value',
                   second_option=5,
@@ -115,7 +115,7 @@ some keywords to your decorator:
     # file script2.py
     from clingon import clingon
 
-    @clingon.clize_and_run(first_option=('first', 'f'), last_option=('last', 'l'))
+    @clingon.clize(first_option=('first', 'f'), last_option=('last', 'l'))
     def my_script(p1, p2,
                   first_option='default_value',
                   second_option=5,
@@ -194,7 +194,7 @@ example
     # file script.py
     from clingon import clingon
 
-    @clingon.clize_and_run
+    @clingon.clize
     @clingon.set_variables(VERSION=1.2.3)
     def my_script(p1, p2,
                   first_option='default_value',
