@@ -1,15 +1,17 @@
+===========================================================
 **clingon** - Command Line INterpreter Generator for pythON
 ===========================================================
 
 .. image:: https://travis-ci.org/francois-vincent/clingon.png?branch=master
         :target: https://travis-ci.org/francois-vincent/clingon
 
-    .. figure:: http://www.ex-astris-scientia.org/inconsistencies/klingons/klingon-gorkon-theundiscoveredcountry.jpg
-       :alt: clingon
-    
+
 
 A handy command line interpreter generator
 ------------------------------------------
+
+.. figure:: http://www.ex-astris-scientia.org/inconsistencies/klingons/klingon-gorkon-theundiscoveredcountry.jpg
+   :alt: clingon
 
 Clingon essentially provides a function decorator that converts a python
 function into a command line script in a snap.
@@ -219,19 +221,20 @@ As a bonus, clingon can also turn your brand new python script into a
 command available locally or globally. Just run the clingon module on
 your script, with option --path or --global-script:
 
-``python clingon.py path/to/your/script [options]
+.. code::
+    python clingon.py path/to/your/script [options]
 
-Options:
---target-path      | -p <str> (default='')
---target-name      | -n <str> (default='')
---user             | -u (default=False)
---make-link        | -m | -s | -l (default=False)
---force            | -f | -o (default=False)
---remove           | -r (default=False)
---no-check-shebang | -n (default=False)
---version          | -V print version
---help             | -? print this help
-``
+    Options:
+    --target-path      | -p <str> (default='')
+    --target-name      | -n <str> (default='')
+    --user             | -u (default=False)
+    --make-link        | -m | -s | -l (default=False)
+    --force            | -f | -o (default=False)
+    --remove           | -r (default=False)
+    --no-check-shebang | -n (default=False)
+    --version          | -V print version
+    --help             | -? print this help
+
 
 This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
 to your local python path by default, and set the proper execution rights.
