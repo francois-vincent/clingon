@@ -349,21 +349,21 @@ def set_variables(**kwargs):
     return f
 
 
-def make_script(python_script_name, path='', target_name='', GLOBAL=False, make_link=False,
+def make_script(python_script_name, target_path='', target_name='', user=False, make_link=False,
                 force=False, remove=False, no_check_shebang=False):
     """v{VERSION}
     This script makes a command line script out of a python file.
-    For example, 'clingon script.py' will copy script.py to:
-    - ~/bin/script, (default),
-    - /usr/local/bin/script if option global-script is set (requires sudo),
-    - path if path is specfied.
+    For example, 'clingon script.py' will copy or symlink script.py to:
+    - <python-path>/script (default),,
+    - <path>/script if --path is specfied,
+    - ~/bin/script is --user is speified.
     and then set the script as executable (without the .py extension)
     """
-    if GLOBAL and path:
-        Clizer._write_error("You cannot specify --path and --global-script at the same time")
+    if user and target_path:
+        Clizer._write_error("You cannot specify --path and --user at the same time")
         return 1
     source = os.path.abspath(python_script_name)
-    dest_dir = os.path.normpath(os.path.expanduser(path or '/usr/local/bin' if GLOBAL else '~/bin'))
+    dest_dir = os.path.normpath(os.path.expanduser('~/bin' if user else target_path or os.path.dirname(sys.executable)))
     target = os.path.join(dest_dir,
                   target_name if target_name else os.path.splitext(os.path.basename(source))[0])
     target_exists = os.path.exists(target)
@@ -437,4 +437,6 @@ def make_script(python_script_name, path='', target_name='', GLOBAL=False, make_
 
 if __name__ == '__main__':
 
-    clize(make_link=('m', 's', 'l'), force=('f', 'o'))(set_variables(VERSION=CLINGON_VERSION)(make_script))
+    clize(make_link=('m', 's', 'l'), force=('f', 'o'), target_path='p', target_name='n')(
+        set_variables(VERSION=CLINGON_VERSION)(
+            make_script))

@@ -447,16 +447,16 @@ class TestMakeScript(unittest.TestCase):
 
     def test_global_and_path(self):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, path='/usr/bin')
+            ret = clingon.make_script('clingon.py', user=True, target_path='/usr/local/bin')
         self.assertEqual(ret, 1)
         self.assertEqual(out.getvalue(), '')
-        self.assertEqual(err.getvalue(), 'You cannot specify --path and --global-script at the same time\n')
+        self.assertEqual(err.getvalue(), 'You cannot specify --path and --user at the same time\n')
 
     @mock.patch('os.path.exists')
     @mock.patch('os.unlink')
     def test_remove(self, os_unlink, os_path_exists):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, remove=True)
+            ret = clingon.make_script('clingon.py', remove=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' removed\n")
         self.assertEqual(err.getvalue(), '')
@@ -466,7 +466,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists', return_value=False)
     def test_remove_no_target(self, os_path_exists):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, remove=True)
+            ret = clingon.make_script('clingon.py', remove=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' not found, nothing to do\n")
         self.assertEqual(err.getvalue(), '')
@@ -488,7 +488,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists')
     def test_target_exists_no_force(self, os_path_exists, os_path_samefile, os_path_islink):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True)
+            ret = clingon.make_script('clingon.py', target_path='/usr/local/bin')
         self.assertEqual(ret, 1)
         self.assertEqual(out.getvalue(), "")
         self.assertEqual(err.getvalue(), "Target '/usr/local/bin/clingon' already exists, aborting\n")
@@ -498,7 +498,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists')
     def test_target_created_aborting(self, os_path_exists, os_path_samefile, os_path_islink):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, make_link=True)
+            ret = clingon.make_script('clingon.py', make_link=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Target '/usr/local/bin/clingon' already created, nothing to do\n")
         self.assertEqual(err.getvalue(), "")
@@ -515,7 +515,7 @@ class TestMakeScript(unittest.TestCase):
                                     os_path_samefile, os_path_islink, os_path_isdir,
                                     shutil_copyfile, os_stat, os_chmod):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, force=True, no_check_shebang=True)
+            ret = clingon.make_script('clingon.py', force=True, no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertIn("as been copied to /usr/local/bin/clingon", out.getvalue())
         self.assertEqual(err.getvalue(), "")
@@ -535,8 +535,8 @@ class TestMakeScript(unittest.TestCase):
                                     os_path_samefile, os_path_islink, os_path_isdir,
                                     os_symlink, os_stat, os_chmod):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', GLOBAL=True, force=True, make_link=True,
-                                      no_check_shebang=True)
+            ret = clingon.make_script('clingon.py', force=True, make_link=True,
+                                      no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertIn("as been symlinked to /usr/local/bin/clingon", out.getvalue())
         self.assertEqual(err.getvalue(), "")

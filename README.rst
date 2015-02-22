@@ -79,8 +79,10 @@ Required parameters are defined as basic positional python parameters
 keyword parameters, they have default values (like the 4 last parameters
 above). As you can see, the Python parameter semantics is easily mapped
 onto a sound command line semantics, very close to the Posix standard.
-Of course you must respect python variable naming rules. For option
-names, '\_' are converted to '-'.
+Of course you must respect python variable naming rules. Option names are
+lower cased and '\_' are converted to '-', such that a python option 'GLOBAL'
+is converted to CLI option '--global' and 'make_link' is converted to
+'--make-link'.
 
 You can specify the script system return code by returning an integer
 value. Any ``return x`` in the decorated function, with x an integer,
