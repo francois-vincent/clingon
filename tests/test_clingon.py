@@ -280,6 +280,14 @@ class TestDecorator(unittest.TestCase):
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
+    def test_option_list_no_value(self, sys_exit):
+        with captured_output() as (out, err):
+            clized_default_shorts('p1 p2 -t')
+        self.assertEqual(err.getvalue(),
+                         "Option '-t' should be followed by a list of <int>\n")
+        self.assertEqual(out.getvalue(), '')
+        sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
+
     def test_spec_option(self, sys_exit):
         with captured_output() as (out, err):
             clized_spec_shorts('p1 p2 -1 specific_value')
@@ -437,7 +445,7 @@ class TestDecorator(unittest.TestCase):
 
 class TestMakeScript(unittest.TestCase):
 
-    def test_local(self):
+    def test_global_and_path(self):
         with captured_output() as (out, err):
             ret = clingon.make_script('clingon.py', GLOBAL=True, path='/usr/bin')
         self.assertEqual(ret, 1)
@@ -454,6 +462,87 @@ class TestMakeScript(unittest.TestCase):
         self.assertEqual(err.getvalue(), '')
         os_unlink.assert_called_with('/usr/local/bin/clingon')
         os_path_exists.assert_called_with('/usr/local/bin/clingon')
+
+    @mock.patch('os.path.exists', return_value=False)
+    def test_remove_no_target(self, os_path_exists):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, remove=True)
+        self.assertIsNone(ret)
+        self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' not found, nothing to do\n")
+        self.assertEqual(err.getvalue(), '')
+        os_path_exists.assert_called_with('/usr/local/bin/clingon')
+
+    @mock.patch('os.path.exists', return_value=False)
+    def test_no_source(self, os_path_exists):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('toto.py')
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertIn('Could not find source', err.getvalue())
+        self.assertIn("toto.py', aborting\n", err.getvalue())
+        path = err.getvalue().split()[4][1:-2]
+        os_path_exists.assert_called_with(path)
+
+    @mock.patch('os.path.islink')
+    @mock.patch('os.path.samefile')
+    @mock.patch('os.path.exists')
+    def test_target_exists_no_force(self, os_path_exists, os_path_samefile, os_path_islink):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True)
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "Target '/usr/local/bin/clingon' already exists, aborting\n")
+
+    @mock.patch('os.path.islink')
+    @mock.patch('os.path.samefile')
+    @mock.patch('os.path.exists')
+    def test_target_created_aborting(self, os_path_exists, os_path_samefile, os_path_islink):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, make_link=True)
+        self.assertIsNone(ret)
+        self.assertEqual(out.getvalue(), "Target '/usr/local/bin/clingon' already created, nothing to do\n")
+        self.assertEqual(err.getvalue(), "")
+
+    @mock.patch('os.chmod')
+    @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
+    @mock.patch('shutil.copyfile')
+    @mock.patch('os.path.isdir')
+    @mock.patch('os.path.islink')
+    @mock.patch('os.path.samefile')
+    @mock.patch('os.path.exists')
+    @mock.patch('os.unlink')
+    def test_copy_target(self, os_unlink, os_path_exists,
+                                    os_path_samefile, os_path_islink, os_path_isdir,
+                                    shutil_copyfile, os_stat, os_chmod):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, force=True, no_check_shebang=True)
+        self.assertIsNone(ret)
+        self.assertIn("as been copied to /usr/local/bin/clingon", out.getvalue())
+        self.assertEqual(err.getvalue(), "")
+        os_path_isdir.assert_called_with('/usr/local/bin')
+        os_unlink.assert_called_with('/usr/local/bin/clingon')
+        os_chmod.assert_called_with('/usr/local/bin/clingon', 72)
+
+    @mock.patch('os.chmod')
+    @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
+    @mock.patch('os.symlink')
+    @mock.patch('os.path.isdir')
+    @mock.patch('os.path.islink')
+    @mock.patch('os.path.samefile', return_value=False)
+    @mock.patch('os.path.exists')
+    @mock.patch('os.unlink')
+    def test_symlink_target(self, os_unlink, os_path_exists,
+                                    os_path_samefile, os_path_islink, os_path_isdir,
+                                    os_symlink, os_stat, os_chmod):
+        with captured_output() as (out, err):
+            ret = clingon.make_script('clingon.py', GLOBAL=True, force=True, make_link=True,
+                                      no_check_shebang=True)
+        self.assertIsNone(ret)
+        self.assertIn("as been symlinked to /usr/local/bin/clingon", out.getvalue())
+        self.assertEqual(err.getvalue(), "")
+        os_path_isdir.assert_called_with('/usr/local/bin')
+        os_unlink.assert_called_with('/usr/local/bin/clingon')
+        os_chmod.assert_called_with('/usr/local/bin/clingon', 72)
 
 
 if __name__ == '__main__':
