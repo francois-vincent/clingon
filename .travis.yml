@@ -13,4 +13,8 @@ python:
 install: pip install -r requirements_test.txt
 
 # command to run tests, e.g. python setup.py test
-script: python setup.py test
+script:
+  - coverage run --source=coveralls setup.py test
+  - coverage report -m
+after_script:
+  coveralls --verbose

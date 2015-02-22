@@ -5,6 +5,8 @@
 .. image:: https://travis-ci.org/francois-vincent/clingon.png?branch=master
         :target: https://travis-ci.org/francois-vincent/clingon
 
+.. image:: https://coveralls.io/repos/francois-vincent/clingon/badge.svg
+  :target: https://coveralls.io/r/francois-vincent/clingon
 
 
 A handy command line interpreter generator
