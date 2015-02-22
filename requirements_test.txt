@@ -1,4 +1,2 @@
 -r requirements.txt
-future
-wheel==0.23.0
 mock
