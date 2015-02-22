@@ -1,8 +1,11 @@
 **clingon** - Command Line INterpreter Generator for pythON
 ===========================================================
 
+.. image:: https://travis-ci.org/francois-vincent/clingon.png?branch=master
+        :target: https://travis-ci.org/francois-vincent/clingon
+
     .. figure:: http://www.ex-astris-scientia.org/inconsistencies/klingons/klingon-gorkon-theundiscoveredcountry.jpg
-       :alt: clingon is cool !
+       :alt: clingon
     
 
 A handy command line interpreter generator
@@ -184,8 +187,8 @@ an upper limit, you have to code it explicitly into your function.
 
 You can specify variables that can be used inside the decorated function
 docstring (with usual python format() mustache notation). This allows
-you to have a dynamic help description. One useful usage is to specify
-the version of your script.
+you to have a dynamic help description. One useful usage is to include
+the version of your script into your help string.
 
 example
 
@@ -216,11 +219,22 @@ As a bonus, clingon can also turn your brand new python script into a
 command available locally or globally. Just run the clingon module on
 your script, with option --path or --global-script:
 
-``python clingon.py path/to/your/script [-g][-p path][-o][-s][-n]``
+``python clingon.py path/to/your/script [options]
 
-This will copy your script to 'path' if specified, or to ~/bin or
-/usr/local/bin (depending on the -g option) and set the proper execution
-rights.
+Options:
+--target-path      | -p <str> (default='')
+--target-name      | -n <str> (default='')
+--user             | -u (default=False)
+--make-link        | -m | -s | -l (default=False)
+--force            | -f | -o (default=False)
+--remove           | -r (default=False)
+--no-check-shebang | -n (default=False)
+--version          | -V print version
+--help             | -? print this help
+``
+
+This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
+to your local python path by default, and set the proper execution rights.
 
 Of course, you can clingon clingon itself !
 
