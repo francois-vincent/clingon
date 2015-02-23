@@ -503,6 +503,7 @@ class TestMakeScript(unittest.TestCase):
         self.assertEqual(out.getvalue(), "Target '/usr/local/bin/clingon' already created, nothing to do\n")
         self.assertEqual(err.getvalue(), "")
 
+    @mock.patch('os.environ.get')
     @mock.patch('os.chmod')
     @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
     @mock.patch('shutil.copyfile')
@@ -513,7 +514,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.unlink')
     def test_copy_target(self, os_unlink, os_path_exists,
                                     os_path_samefile, os_path_islink, os_path_isdir,
-                                    shutil_copyfile, os_stat, os_chmod):
+                                    shutil_copyfile, os_stat, os_chmod, os_environ):
         with captured_output() as (out, err):
             ret = clingon.make_script('clingon.py', force=True, no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
@@ -523,6 +524,7 @@ class TestMakeScript(unittest.TestCase):
         os_unlink.assert_called_with('/usr/local/bin/clingon')
         os_chmod.assert_called_with('/usr/local/bin/clingon', 72)
 
+    @mock.patch('os.environ.get', return_value='/usr/local/bin')
     @mock.patch('os.chmod')
     @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
     @mock.patch('os.symlink')
@@ -533,7 +535,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.unlink')
     def test_symlink_target(self, os_unlink, os_path_exists,
                                     os_path_samefile, os_path_islink, os_path_isdir,
-                                    os_symlink, os_stat, os_chmod):
+                                    os_symlink, os_stat, os_chmod, os_environ):
         with captured_output() as (out, err):
             ret = clingon.make_script('clingon.py', force=True, make_link=True,
                                       no_check_shebang=True, target_path='/usr/local/bin')

@@ -12,6 +12,6 @@ python:
 install:
   - make install
 script:
-  - make coverage
+  - nosetests --with-cov --cov-config=.coveragerc
 after_success:
   - codecov
