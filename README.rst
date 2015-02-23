@@ -3,11 +3,10 @@
 ===========================================================
 
 .. image:: https://travis-ci.org/francois-vincent/clingon.png?branch=master
-        :target: https://travis-ci.org/francois-vincent/clingon
+   :target: https://travis-ci.org/francois-vincent/clingon
 
-.. image:: https://coveralls.io/repos/francois-vincent/clingon/badge.svg
-  :target: https://coveralls.io/r/francois-vincent/clingon
-
+.. image:: https://codecov.io/github/francois-vincent/clingon/coverage.svg?branch=master
+   :target: https://codecov.io/github/francois-vincent/clingon
 
 A handy command line interpreter generator
 ------------------------------------------
@@ -33,12 +32,6 @@ Installation
 .. code:: sh
 
     $ pip install clingon
-
-If you are using Python3 or Pypy, you may have to install future:
-
-.. code:: sh
-
-    $ pip install future
 
 How to use
 ~~~~~~~~~~
