@@ -10,9 +10,8 @@ python:
   - "pypy"
 
 install:
-  - pip install -r requirements_test.txt
-  - python setup.py install
+  - make install
 script:
-  - nosetests --rednose --with-cov --cov-config=.coveragerc
+  - make coverage
 after_success:
   - codecov
