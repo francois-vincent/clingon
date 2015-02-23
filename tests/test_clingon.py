@@ -518,7 +518,7 @@ class TestMakeScript(unittest.TestCase):
         with captured_output() as (out, err):
             ret = clingon.make_script('clingon.py', force=True, no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
-        self.assertIn("as been copied to /usr/local/bin/clingon", out.getvalue())
+        self.assertIn("has been copied to /usr/local/bin/clingon", out.getvalue())
         self.assertEqual(err.getvalue(), "")
         os_path_isdir.assert_called_with('/usr/local/bin')
         os_unlink.assert_called_with('/usr/local/bin/clingon')
@@ -540,7 +540,7 @@ class TestMakeScript(unittest.TestCase):
             ret = clingon.make_script('clingon.py', force=True, make_link=True,
                                       no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
-        self.assertIn("as been symlinked to /usr/local/bin/clingon", out.getvalue())
+        self.assertIn("has been symlinked to /usr/local/bin/clingon", out.getvalue())
         self.assertEqual(err.getvalue(), "")
         os_path_isdir.assert_called_with('/usr/local/bin')
         os_unlink.assert_called_with('/usr/local/bin/clingon')

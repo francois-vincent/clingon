@@ -128,13 +128,10 @@ class Clizer(object):
         return self.variables.get(key)
 
     def _print_version(self):
-        import subprocess
-
-        proc = subprocess.Popen('/usr/bin/env python -V', shell=True, stderr=subprocess.PIPE)
         source = os.path.dirname(self.file)
         source = ' from ' + source if source else ''
-        Clizer._write_error('version %s%s (%s)' % (self._get_global('VERSION'), source,
-                                                   proc.communicate()[1][:-1]))
+        Clizer._write_error('version %s%s (Python %s)' % (self._get_global('VERSION'), source,
+                                                   sys.version.split()[0]))
 
     def start(self, param_string=None):
         optargs = {}
@@ -422,13 +419,13 @@ def make_script(python_script_name, target_path='', target_name='', user=False, 
         os.symlink(source, target)
         st = os.stat(target)
         os.chmod(target, st.st_mode | perms)
-        print('Script %s as been symlinked to %s' % (source, target))
+        print('Script %s has been symlinked to %s' % (source, target))
     else:
         import shutil
         shutil.copyfile(source, target)
         st = os.stat(target)
         os.chmod(target, st.st_mode | perms)
-        print('Script %s as been copied to %s' % (source, target))
+        print('Script %s has been copied to %s' % (source, target))
     # check PATH and advise user to update it if relevant
     path_env = os.environ.get('PATH')
     if not path_env or dest_dir not in path_env:

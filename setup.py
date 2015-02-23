@@ -15,7 +15,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
-requirements = ['future', 'wheel==0.23.0']
+requirements = ['future', 'wheel']
 test_requirements = ['mock', 'coverage', 'nose', 'nose-cov', 'codecov']
 
 # Add Python 2.6 specific dependencies
@@ -43,10 +43,13 @@ setup(
     zip_safe=False,
     keywords='clingon',
     classifiers=[
-        'Development Status ::  2 - Beta',
+        # 'Development Status ::  3 - Alpha',
         'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
+        'Topic :: Desktop Environment',
+        'Topic :: System :: Shells',
         "Programming Language :: Python :: 2",
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
