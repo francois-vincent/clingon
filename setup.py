@@ -15,8 +15,8 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
-requirements = open('requirements.txt').read().strip().split('\n')
-test_requirements = open('requirements_test.txt').read().strip().split('\n')[1:]
+requirements = ['future', 'wheel==0.23.0']
+test_requirements = ['mock', 'coverage', 'nose', 'nose-cov', 'codecov']
 
 # Add Python 2.6 specific dependencies
 if sys.version_info[:2] < (2, 7):

@@ -1,0 +1,9 @@
+future
+wheel==0.23.0
+ordereddict
+mock
+coverage
+nose
+nose-cov
+codecov
+unittest2
