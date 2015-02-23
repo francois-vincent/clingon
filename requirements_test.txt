@@ -3,4 +3,5 @@ mock
 coverage
 nose
 nose-cov
+rednose
 codecov
