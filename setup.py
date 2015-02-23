@@ -42,11 +42,6 @@ setup(
     license="BSD",
     zip_safe=False,
     keywords='clingon',
-    entry_points={
-        'console_scripts': [
-            'coveralls = coveralls.cli:main',
-        ],
-    },
     classifiers=[
         'Development Status ::  2 - Beta',
         'Intended Audience :: Developers',
