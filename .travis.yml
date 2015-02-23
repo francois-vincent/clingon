@@ -12,6 +12,6 @@ python:
 install:
   - make install
 script:
-  - nosetests --rednose --with-cov --cov-config=.coveragerc
+  - nosetests
 after_success:
   - codecov
