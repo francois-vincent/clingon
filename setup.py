@@ -26,7 +26,7 @@ if sys.version_info[:2] < (2, 7):
 
 setup(
     name='clingon',
-    version='0.1.0',
+    version='0.1.1',
     description="Command Line INterpreter Generator for pythON",
     long_description=readme + '\n\n' + history,
     author="François Vincent",

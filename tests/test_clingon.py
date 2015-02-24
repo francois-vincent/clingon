@@ -196,6 +196,28 @@ class TestDecoratorBasic(unittest.TestCase):
                              ('last_option', False)
                          ]))
 
+    def test_options_same_first_letter(self):
+
+        def clized(option_1=False,
+                   option_2=5):
+            pass
+
+        ret = clingon.clize(clized)
+        self.assertDictEqual(ret.options, {
+            '--option-1': False,
+            '-o': False,
+            '--option-2': 5,
+        })
+        self.assertDictEqual(ret.options_aliases, {
+            'option_1': ('o',),
+            'option_2': ('o',),
+        })
+        self.assertDictEqual(ret.options_equ, {
+            '--option-1': 'option_1',
+            '-o': 'option_1',
+            '--option-2': 'option_2',
+        })
+
 
 @mock.patch('sys.exit')
 class TestDecorator(unittest.TestCase):
@@ -260,7 +282,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 --second-option x')
         self.assertEqual(err.getvalue(),
-                         "Argument of option --second-option has wrong type (<int> expected)\n")
+                         "Argument of option --second-option has wrong type (<int> expected) (-? for help)\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -268,7 +290,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 -s x')
         self.assertEqual(err.getvalue(),
-                         "Argument of option -s has wrong type (<int> expected)\n")
+                         "Argument of option -s has wrong type (<int> expected) (-? for help)\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -276,7 +298,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 --third-option 1 y')
         self.assertEqual(err.getvalue(),
-                         'Argument 2 of option --third-option has wrong type (<int> expected)\n')
+                         'Argument 2 of option --third-option has wrong type (<int> expected) (-? for help)\n')
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -284,7 +306,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 -t')
         self.assertEqual(err.getvalue(),
-                         "Option '-t' should be followed by a list of <int>\n")
+                         "Option '-t' should be followed by a list of <int> (-? for help)\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -326,7 +348,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 -l --last-option')
         self.assertEqual(err.getvalue(),
-                         "Option '--last-option' found twice\n")
+                         "Option '--last-option' found twice (-? for help)\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -334,7 +356,7 @@ class TestDecorator(unittest.TestCase):
         with captured_output() as (out, err):
             clized_default_shorts('p1 p2 -s')
         self.assertEqual(err.getvalue(),
-                         "Option '-s' should be followed by a <int>\n")
+                         "Option '-s' should be followed by a <int> (-? for help)\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
@@ -343,6 +365,18 @@ class TestDecorator(unittest.TestCase):
             clized_spec_shorts('p1 p2 -l')
         self.assertEqual(out.getvalue(), '')
         self.assertEqual(err.getvalue(), '')
+        sys_exit.assert_called_with(12)
+
+    def test_debug(self, sys_exit):
+        clingon.DEBUG = True
+        try:
+            with captured_output() as (out, err):
+                clized_spec_shorts('p1 p2 -l')
+        finally:
+            clingon.DEBUG = False
+        self.assertEqual(out.getvalue(), "clize call parameters: ['p1', 'p2', 'default_value', 5, [4, 3], True]\n"
+                                         "Exit with code 12\n")
+        self.assertEqual(err.getvalue(), "")
         sys_exit.assert_called_with(12)
 
     def test_help_output(self, sys_exit):
@@ -362,8 +396,8 @@ class TestDecorator(unittest.TestCase):
     def test_raise_nodebug(self, sys_exit):
         with captured_output() as (out, err):
             clized_that_raises('')
-        self.assertEqual(err.getvalue(), "I just raise\n")
         self.assertEqual(out.getvalue(), '')
+        self.assertEqual(err.getvalue(), "I just raise\n")
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
     def test_raise_debug(self, sys_exit):
@@ -373,8 +407,8 @@ class TestDecorator(unittest.TestCase):
                 self.assertRaises(RuntimeError, clized_that_raises, '')
         finally:
             clingon.DEBUG = False
+        self.assertEqual(out.getvalue(), "clize call parameters: []\n")
         self.assertEqual(err.getvalue(), "I just raise\n")
-        self.assertEqual(out.getvalue(), 'clize call parameters: []\n')
         sys_exit.assert_not_called()
 
     def test_varargs_novararg(self, sys_exit):
@@ -445,18 +479,48 @@ class TestDecorator(unittest.TestCase):
 
 class TestMakeScript(unittest.TestCase):
 
+    def call_script(self, target_path='', target_name='', user=False, make_link=False,
+                force=False, remove=False, no_check_shebang=False, auto_install_clingon=False,
+                args=()):
+        return clingon.make_script(target_path, target_name, user, make_link,
+                force, remove, no_check_shebang, auto_install_clingon, *args)
+
+    def test_no_parameter(self):
+        with captured_output() as (out, err):
+            ret = self.call_script()
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "You must specify either a target script "
+                                         "or --auto-install-clingon (-? for help)\n")
+
+    def test_target_and_auto(self):
+        with captured_output() as (out, err):
+            ret = self.call_script(args=('clingon.py',), auto_install_clingon=True)
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "You cannot specify a target script and "
+                                         "--auto-install-clingon at the same time (-? for help)\n")
+
+    def test_multiple_target_file(self):
+        with captured_output() as (out, err):
+            ret = self.call_script(args=('clingon.py', 'toto.py'))
+        self.assertEqual(ret, 1)
+        self.assertEqual(out.getvalue(), "")
+        self.assertEqual(err.getvalue(), "You must specify a single target, found: "
+                                         "('clingon.py', 'toto.py') (-? for help)\n")
+
     def test_global_and_path(self):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', user=True, target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), user=True, target_path='/usr/local/bin')
         self.assertEqual(ret, 1)
         self.assertEqual(out.getvalue(), '')
-        self.assertEqual(err.getvalue(), 'You cannot specify --path and --user at the same time\n')
+        self.assertEqual(err.getvalue(), 'You cannot specify --path and --user at the same time (-? for help)\n')
 
     @mock.patch('os.path.exists')
     @mock.patch('os.unlink')
     def test_remove(self, os_unlink, os_path_exists):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', remove=True, target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), remove=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' removed\n")
         self.assertEqual(err.getvalue(), '')
@@ -466,7 +530,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists', return_value=False)
     def test_remove_no_target(self, os_path_exists):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', remove=True, target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), remove=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Script '/usr/local/bin/clingon' not found, nothing to do\n")
         self.assertEqual(err.getvalue(), '')
@@ -475,7 +539,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists', return_value=False)
     def test_no_source(self, os_path_exists):
         with captured_output() as (out, err):
-            ret = clingon.make_script('toto.py')
+            ret = self.call_script(args=('toto.py',))
         self.assertEqual(ret, 1)
         self.assertEqual(out.getvalue(), "")
         self.assertIn('Could not find source', err.getvalue())
@@ -488,7 +552,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists')
     def test_target_exists_no_force(self, os_path_exists, os_path_samefile, os_path_islink):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), target_path='/usr/local/bin')
         self.assertEqual(ret, 1)
         self.assertEqual(out.getvalue(), "")
         self.assertEqual(err.getvalue(), "Target '/usr/local/bin/clingon' already exists, aborting\n")
@@ -498,7 +562,7 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.path.exists')
     def test_target_created_aborting(self, os_path_exists, os_path_samefile, os_path_islink):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', make_link=True, target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), make_link=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertEqual(out.getvalue(), "Target '/usr/local/bin/clingon' already created, nothing to do\n")
         self.assertEqual(err.getvalue(), "")
@@ -516,7 +580,7 @@ class TestMakeScript(unittest.TestCase):
                                     os_path_samefile, os_path_islink, os_path_isdir,
                                     shutil_copyfile, os_stat, os_chmod, os_environ):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', force=True, no_check_shebang=True, target_path='/usr/local/bin')
+            ret = self.call_script(args=('clingon.py',), force=True, no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertIn("has been copied to /usr/local/bin/clingon", out.getvalue())
         self.assertEqual(err.getvalue(), "")
@@ -537,7 +601,7 @@ class TestMakeScript(unittest.TestCase):
                                     os_path_samefile, os_path_islink, os_path_isdir,
                                     os_symlink, os_stat, os_chmod, os_environ):
         with captured_output() as (out, err):
-            ret = clingon.make_script('clingon.py', force=True, make_link=True,
+            ret = self.call_script(args=('clingon.py',), force=True, make_link=True,
                                       no_check_shebang=True, target_path='/usr/local/bin')
         self.assertIsNone(ret)
         self.assertIn("has been symlinked to /usr/local/bin/clingon", out.getvalue())

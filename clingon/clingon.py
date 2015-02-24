@@ -22,7 +22,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 CLINGON_VERSION = __version__
 DEBUG = False
 TEST = False
@@ -45,7 +45,8 @@ class Clizer(object):
 
     @staticmethod
     def _write_error(*args, **kwargs):
-        sys.stderr.write(kwargs.get('sep', ' ').join(args) + kwargs.get('end', '\n'))
+        sys.stderr.write(kwargs.get('sep', ' ').join(args) + kwargs.get('help', ' (-? for help)')
+                         + kwargs.get('end', '\n'))
 
     @staticmethod
     def _get_type(arg):
@@ -204,6 +205,7 @@ class Clizer(object):
         allargs.extend(varargs)
         if DEBUG:
             print('clize call parameters:', allargs)
+        # all parameters are filled
         return self.func(*allargs)
 
     def __call__(self, param_string=None):
@@ -211,11 +213,11 @@ class Clizer(object):
             code = self.start(param_string)
         except Clizer.RunnerErrorWithUsage as e:
             self._print_usage(file=sys.stderr)
-            Clizer._write_error(str(e))
+            Clizer._write_error(str(e), help='')
         except Clizer.RunnerError as e:
             Clizer._write_error(str(e))
         except Exception as e:
-            Clizer._write_error(str(e))
+            Clizer._write_error(str(e), help='')
             if DEBUG:
                 raise
         else:
@@ -346,8 +348,8 @@ def set_variables(**kwargs):
     return f
 
 
-def make_script(python_script_name, target_path='', target_name='', user=False, make_link=False,
-                force=False, remove=False, no_check_shebang=False):
+def make_script(target_path='', target_name='', user=False, make_link=False,
+                force=False, remove=False, no_check_shebang=False, auto_install_clingon=False, *args):
     """v{VERSION}
     This script makes a command line script out of a python file.
     For example, 'clingon script.py' will copy or symlink script.py to:
@@ -356,10 +358,19 @@ def make_script(python_script_name, target_path='', target_name='', user=False, 
     - ~/bin/script is --user is speified.
     and then set the script as executable (without the .py extension)
     """
+    if args and auto_install_clingon:
+        Clizer._write_error("You cannot specify a target script and --auto-install-clingon at the same time")
+        return 1
+    if not (args or auto_install_clingon):
+        Clizer._write_error("You must specify either a target script or --auto-install-clingon")
+        return 1
+    if len(args) > 1:
+        Clizer._write_error("You must specify a single target, found: %s" % str(args))
+        return 1
     if user and target_path:
         Clizer._write_error("You cannot specify --path and --user at the same time")
         return 1
-    source = os.path.abspath(python_script_name)
+    source = os.path.abspath(args[0]) if args else __file__
     dest_dir = os.path.normpath(os.path.expanduser('~/bin' if user else target_path or os.path.dirname(sys.executable)))
     target = os.path.join(dest_dir,
                   target_name if target_name else os.path.splitext(os.path.basename(source))[0])
@@ -372,7 +383,7 @@ def make_script(python_script_name, target_path='', target_name='', user=False, 
             print("Script '%s' not found, nothing to do" % target)
         return
     if not os.path.exists(source):
-        Clizer._write_error("Could not find source '%s', aborting" % source)
+        Clizer._write_error("Could not find source '%s', aborting" % source, help='')
         return 1
     if DEBUG:
         print('Source, target:', source, target)
@@ -387,7 +398,7 @@ def make_script(python_script_name, target_path='', target_name='', user=False, 
             print("Target '%s' already created, nothing to do" % target)
             return
         elif not force:
-            Clizer._write_error("Target '%s' already exists, aborting" % target)
+            Clizer._write_error("Target '%s' already exists, aborting" % target, help='')
             return 1
 
     if not os.path.isdir(dest_dir):
@@ -395,14 +406,14 @@ def make_script(python_script_name, target_path='', target_name='', user=False, 
         if os.access(os.path.basename(dest_dir), os.W_OK):
             os.system("mkdir %s" % dest_dir)
         else:
-            Clizer._write_error("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir)
+            Clizer._write_error("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir, help='')
             return 1
 
     if not no_check_shebang:
         # Check that file starts with python shebang (#!/usr/bin/env python)
         import re
         if not re.match(r'#!\s*/usr/bin/env\s+python', open(source).readline()):
-            Clizer._write_error("Your script's first line should be '#!/usr/bin/env python', aborting")
+            Clizer._write_error("Your script's first line should be '#!/usr/bin/env python', aborting", help='')
             return 1
 
     # Now it's time to copy or symlink file

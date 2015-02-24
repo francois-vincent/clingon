@@ -8,6 +8,16 @@
 .. image:: https://codecov.io/github/francois-vincent/clingon/coverage.svg?branch=master
    :target: https://codecov.io/github/francois-vincent/clingon
 
+.. image:: https://pypip.in/version/clingon/badge.svg
+   :target: https://pypi.python.org/pypi/clingon
+
+.. image:: https://pypip.in/py_versions/clingon/badge.svg
+   :target: https://pypi.python.org/pypi/clingon/
+
+.. image:: https://pypip.in/download/clingon/badge.svg
+   :target: https://pypi.python.org/pypi/clingon/
+
+
 A handy command line interpreter generator
 ------------------------------------------
 
@@ -214,27 +224,31 @@ Bonus
 
 As a bonus, clingon can also turn your brand new python script into a
 command available locally or globally. Just run the clingon module on
-your script, with option --path or --global-script:
+your script, with relevant option: no option will copy clingonn in the
+same path as python itself, --user will copy it to your ~/bin folder,
+and --target-path to the specified path.
 
 .. code::
-    python clingon.py path/to/your/script [options]
+  clingon  [varargs] [options] [--help | -?]
 
-    Options:
-    --target-path      | -p <str> (default='')
-    --target-name      | -n <str> (default='')
-    --user             | -u (default=False)
-    --make-link        | -m | -s | -l (default=False)
-    --force            | -f | -o (default=False)
-    --remove           | -r (default=False)
-    --no-check-shebang | -n (default=False)
-    --version          | -V print version
-    --help             | -? print this help
+Options:
+--target-path          | -p <str> (default='')
+--target-name          | -n <str> (default='')
+--user                 | -u (default=False)
+--make-link            | -m | -s | -l (default=False)
+--force                | -f | -o (default=False)
+--remove               | -r (default=False)
+--no-check-shebang     | -n (default=False)
+--auto-install-clingon | -a (default=False)
+--version              | -V print version
+--help                 | -? print this help
 
 
 This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
 to your local python path by default, and set the proper execution rights.
 
-Of course, you can clingon clingon itself !
+Of course, you can clingon clingon itself: ``python path-to-clingon.py -a`` will copy clingon
+to the same folder as the current python executable and make it a executable script.
 
 Licence
 ~~~~~~~
