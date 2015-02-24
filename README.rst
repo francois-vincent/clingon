@@ -228,20 +228,21 @@ your script, with relevant option: no option will copy clingonn in the
 same path as python itself, --user will copy it to your ~/bin folder,
 and --target-path to the specified path.
 
-.. code::
-  clingon  [varargs] [options] [--help | -?]
+.. code:: sh
 
-Options:
---target-path          | -p <str> (default='')
---target-name          | -n <str> (default='')
---user                 | -u (default=False)
---make-link            | -m | -s | -l (default=False)
---force                | -f | -o (default=False)
---remove               | -r (default=False)
---no-check-shebang     | -n (default=False)
---auto-install-clingon | -a (default=False)
---version              | -V print version
---help                 | -? print this help
+    clingon  [varargs] [options] [--help | -?]
+
+    Options:
+    --target-path          | -p <str> (default='')
+    --target-name          | -n <str> (default='')
+    --user                 | -u (default=False)
+    --make-link            | -m | -s | -l (default=False)
+    --force                | -f | -o (default=False)
+    --remove               | -r (default=False)
+    --no-check-shebang     | -n (default=False)
+    --auto-install-clingon | -a (default=False)
+    --version              | -V print version
+    --help                 | -? print this help
 
 
 This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
