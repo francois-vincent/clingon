@@ -567,15 +567,12 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
     @mock.patch('shutil.copyfile')
     @mock.patch('os.path.isdir')
-    @mock.patch('os.path.islink')
-    @mock.patch('os.path.samefile')
-    @mock.patch('os.path.exists')
     @mock.patch('os.unlink')
-    def test_copy_target(self, os_unlink, os_path_exists,
-                         os_path_samefile, os_path_islink, os_path_isdir,
+    def test_copy_target(self, os_unlink, os_path_isdir,
                          shutil_copyfile, os_stat, os_chmod, os_environ, sys_exit):
-        with captured_output() as (out, err):
-            clingon.clingon_script()('clingon/clingon.py -f -p /usr/local/bin')
+        with mock.patch('os.path.exists'), mock.patch('os.path.samefile'), mock.patch('os.path.islink'):
+            with captured_output() as (out, err):
+                    clingon.clingon_script()('clingon/clingon.py -f -p /usr/local/bin --no-check-shebang')
         self.assertEqual(err.getvalue(), "")
         self.assertIn("has been copied to /usr/local/bin/clingon", out.getvalue())
         self.assertIn("Please add your local bin path [/usr/local/bin] to your environment PATH", out.getvalue())
@@ -589,15 +586,14 @@ class TestMakeScript(unittest.TestCase):
     @mock.patch('os.stat', return_value=type('st', (object,), {'st_mode': 0}))
     @mock.patch('os.symlink')
     @mock.patch('os.path.isdir')
-    @mock.patch('os.path.islink')
-    @mock.patch('os.path.samefile', return_value=False)
-    @mock.patch('os.path.exists')
     @mock.patch('os.unlink')
-    def test_symlink_target(self, os_unlink, os_path_exists,
-                            os_path_samefile, os_path_islink, os_path_isdir,
+    def test_symlink_target(self, os_unlink, os_path_isdir,
                             os_symlink, os_stat, os_chmod, os_environ, sys_exit):
-        with captured_output() as (out, err):
-            clingon.clingon_script()('clingon/clingon.py -f -l -p /usr/local/bin --no-check-path')
+        with mock.patch('os.path.exists'), mock.patch('os.path.samefile', return_value=False), \
+             mock.patch('os.path.islink'):
+            with captured_output() as (out, err):
+                clingon.clingon_script()('clingon/clingon.py -f -l -p /usr/local/bin '
+                                         '--no-check-path  --no-check-shebang')
         self.assertEqual(err.getvalue(), "")
         self.assertIn("has been symlinked to /usr/local/bin/clingon", out.getvalue())
         os_path_isdir.assert_called_with('/usr/local/bin')
