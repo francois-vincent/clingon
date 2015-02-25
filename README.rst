@@ -219,37 +219,40 @@ example
 Specifying a VERSION variable will also automatically add a new option
 (--version \| -V).
 
+You can raise a special exception, ``RunnerErrorWithUsage`` with your
+message as a parameter. This will prepend a usage string before your error message
+in stderr output.
+
+
 Bonus
 ~~~~~
 
 As a bonus, clingon can also turn your brand new python script into a
 command available locally or globally. Just run the clingon module on
-your script, with relevant option: no option will copy clingonn in the
+your script, with relevant option: no option will copy clingon in the
 same path as python itself, --user will copy it to your ~/bin folder,
 and --target-path to the specified path.
 
 .. code:: sh
 
-    clingon  [varargs] [options] [--help | -?]
+    clingon python_script [options] [--help | -?]
 
     Options:
-    --target-path          | -p <str> (default='')
-    --target-name          | -n <str> (default='')
-    --user                 | -u (default=False)
-    --make-link            | -m | -s | -l (default=False)
-    --force                | -f | -o (default=False)
-    --remove               | -r (default=False)
-    --no-check-shebang     | -n (default=False)
-    --auto-install-clingon | -a (default=False)
-    --version              | -V print version
-    --help                 | -? print this help
+    --target-path      | -p <str> (default='')
+    --target-name      | -n <str> (default='')
+    --user             | -u (default=False)
+    --make-link        | -m | -s | -l (default=False)
+    --force            | -f | -o (default=False)
+    --remove           | -r (default=False)
+    --no-check-shebang | -n (default=False)
+    --version          | -V print version (0.1.1)
+    --help             | -? print this help
 
 
 This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
 to your local python path by default, and set the proper execution rights.
 
-Of course, you can clingon clingon itself: ``python path-to-clingon.py -a`` will copy clingon
-to the same folder as the current python executable and make it a executable script.
+This is automatically installed as a new command when clingon is installed to your machine.
 
 Licence
 ~~~~~~~

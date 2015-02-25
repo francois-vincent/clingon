@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from .clingon import __version__
+
 __author__ = 'François Vincent'
-__email__ = 'francois.vincent01@gmail.com'
-__version__ = '0.1.0'
+__github__ = 'https://github.com/francois-vincent/clingon'

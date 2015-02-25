@@ -22,11 +22,22 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.1'
-CLINGON_VERSION = __version__
+__version__ = '0.1.2'
 DEBUG = False
 TEST = False
 SYSTEM_EXIT_ERROR_CODE = 1
+
+
+class ClingonError(RuntimeError):
+    pass
+
+
+class RunnerError(ClingonError):
+    pass
+
+
+class RunnerErrorWithUsage(ClingonError):
+    pass
 
 
 class Clizer(object):
@@ -37,16 +48,9 @@ class Clizer(object):
     _help_options = ('--help', '-?')
     _version_options = ('--version', '-V')
 
-    class RunnerError(RuntimeError):
-        pass
-
-    class RunnerErrorWithUsage(RuntimeError):
-        pass
-
     @staticmethod
     def _write_error(*args, **kwargs):
-        sys.stderr.write(kwargs.get('sep', ' ').join(args) + kwargs.get('help', ' (-? for help)')
-                         + kwargs.get('end', '\n'))
+        sys.stderr.write(kwargs.get('sep', ' ').join(args) + kwargs.get('end', '\n'))
 
     @staticmethod
     def _get_type(arg):
@@ -113,6 +117,7 @@ class Clizer(object):
                 alias = self.options_aliases[x]
                 if isinstance(alias, basestring):
                     alias = self.options_aliases[x] = (alias,)
+                new_alias = []
                 for a in alias:
                     k = '-' + a
                     if k in self.options or k in self._version_options:
@@ -120,6 +125,8 @@ class Clizer(object):
                         continue
                     self.options[k] = t
                     self.options_equ[k] = x
+                    new_alias.append(a)
+                self.options_aliases[x] = new_alias
 
     def _eval_global(self):
         for k, v in listitems(self.variables):
@@ -132,7 +139,7 @@ class Clizer(object):
         source = os.path.dirname(self.file)
         source = ' from ' + source if source else ''
         Clizer._write_error('version %s%s (Python %s)' % (self._get_global('VERSION'), source,
-                                                   sys.version.split()[0]))
+                                                   sys.version.split()[0]), help='')
 
     def start(self, param_string=None):
         optargs = {}
@@ -158,7 +165,7 @@ class Clizer(object):
                 return
             if x in self.options:
                 if self.options_equ[x] in optargs:
-                    raise Clizer.RunnerError("Option '%s' found twice" % x)
+                    raise RunnerError("Option '%s' found twice" % x)
                 if isinstance(self.options[x], (list, tuple)):
                     argpos = i
                     optargs[self.options_equ[x]] = []
@@ -167,37 +174,39 @@ class Clizer(object):
                         try:
                             optargs[self.options_equ[x]].append(type(self.options[x][0])(argv[i]))
                         except ValueError:
-                            raise Clizer.RunnerError("Argument %d of option %s has wrong type (%s expected)" %
-                                                     (i - argpos, x, self._format_type(self.options[x][0])))
+                            raise RunnerErrorWithUsage("Argument %d of option %s has wrong type (%s expected)" %
+                                              (i - argpos, x, self._format_type(self.options[x][0])))
                         i += 1
                     if not len(optargs[self.options_equ[x]]):
-                        raise Clizer.RunnerError("Option '%s' should be followed by a list of %s" %
-                                                 (x, self._format_type(self.options[x][0])))
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %s" %
+                                          (x, self._format_type(self.options[x][0])))
                 elif type(self.options[x]) is bool:
                     optargs[self.options_equ[x]] = True
                     i += 1
                 else:
                     i += 1
                     if i >= len(argv) or argv[i] in self.options:
-                        raise Clizer.RunnerError("Option '%s' should be followed by a %s" %
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by a %s" %
                                                  (x, self._format_type(self.options[x])))
                     try:
                         optargs[self.options_equ[x]] = type(self.options[x])(argv[i])
                     except ValueError:
-                        raise Clizer.RunnerError("Argument of option %s has wrong type (%s expected)" %
-                                                 (x, self._format_type(self.options[x])))
+                        raise RunnerErrorWithUsage("Argument of option %s has wrong type (%s expected)" %
+                                          (x, self._format_type(self.options[x])))
                     i += 1
             else:
-                if len(reqargs) < len(self.reqargs):
+                if x.startswith('-'):
+                    raise RunnerErrorWithUsage("Unrecognized option '%s'" % argv[i])
+                elif len(reqargs) < len(self.reqargs):
                     reqargs.append(argv[i])
                 elif self.varargs:
                     varargs.append(argv[i])
                 else:
-                    raise Clizer.RunnerErrorWithUsage("Unrecognized parameter or option '%s'" % argv[i])
+                    raise RunnerErrorWithUsage("Unrecognized parameter '%s'" % argv[i])
                 i += 1
         if self.reqargs and len(reqargs) < len(self.reqargs):
-            raise Clizer.RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
-            # merge required, optional args and options in allargs
+            raise RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
+        # merge required, optional args and options in allargs
         options = OrderedDict(self.python_options)
         options.update(optargs)
         allargs = reqargs
@@ -211,10 +220,10 @@ class Clizer(object):
     def __call__(self, param_string=None):
         try:
             code = self.start(param_string)
-        except Clizer.RunnerErrorWithUsage as e:
+        except RunnerErrorWithUsage as e:
             self._print_usage(file=sys.stderr)
             Clizer._write_error(str(e), help='')
-        except Clizer.RunnerError as e:
+        except RunnerError as e:
             Clizer._write_error(str(e))
         except Exception as e:
             Clizer._write_error(str(e), help='')
@@ -234,7 +243,7 @@ class Clizer(object):
 
     def _format_aliases(self, option):
         option = self.options_equ[option]
-        if option in self.options_aliases:
+        if option in self.options_aliases and self.options_aliases[option]:
             return '| -' + ' | -'.join(self.options_aliases[option]) + ' '
         return ''
 
@@ -348,32 +357,22 @@ def set_variables(**kwargs):
     return f
 
 
-def make_script(target_path='', target_name='', user=False, make_link=False,
-                force=False, remove=False, no_check_shebang=False, auto_install_clingon=False, *args):
+def make_script(python_script, target_path='', target_name='', user=False, make_link=False,
+                force=False, remove=False, no_check_shebang=False, no_check_path=False):
     """v{VERSION}
     This script makes a command line script out of a python file.
     For example, 'clingon script.py' will copy or symlink script.py to:
     - <python-path>/script (default),,
-    - <path>/script if --path is specfied,
-    - ~/bin/script is --user is speified.
+    - <path>/script if --target-path is specfied,
+    - ~/bin/script if --user is speified.
     and then set the script as executable (without the .py extension)
     """
-    if args and auto_install_clingon:
-        Clizer._write_error("You cannot specify a target script and --auto-install-clingon at the same time")
-        return 1
-    if not (args or auto_install_clingon):
-        Clizer._write_error("You must specify either a target script or --auto-install-clingon")
-        return 1
-    if len(args) > 1:
-        Clizer._write_error("You must specify a single target, found: %s" % str(args))
-        return 1
     if user and target_path:
-        Clizer._write_error("You cannot specify --path and --user at the same time")
-        return 1
-    source = os.path.abspath(args[0]) if args else __file__
+        raise RunnerErrorWithUsage("You cannot specify --path and --user at the same time")
+    source = os.path.abspath(python_script)
     dest_dir = os.path.normpath(os.path.expanduser('~/bin' if user else target_path or os.path.dirname(sys.executable)))
-    target = os.path.join(dest_dir,
-                  target_name if target_name else os.path.splitext(os.path.basename(source))[0])
+    target = os.path.join(dest_dir, target_name if target_name
+                else os.path.splitext(os.path.basename(source))[0])
     target_exists = os.path.exists(target)
     if remove:
         if target_exists:
@@ -383,8 +382,7 @@ def make_script(target_path='', target_name='', user=False, make_link=False,
             print("Script '%s' not found, nothing to do" % target)
         return
     if not os.path.exists(source):
-        Clizer._write_error("Could not find source '%s', aborting" % source, help='')
-        return 1
+        raise RunnerError("Could not find source '%s', aborting" % source)
     if DEBUG:
         print('Source, target:', source, target)
 
@@ -398,23 +396,20 @@ def make_script(target_path='', target_name='', user=False, make_link=False,
             print("Target '%s' already created, nothing to do" % target)
             return
         elif not force:
-            Clizer._write_error("Target '%s' already exists, aborting" % target, help='')
-            return 1
+            raise RunnerError("Target '%s' already exists, aborting" % target)
 
     if not os.path.isdir(dest_dir):
         # Create directory but only if father dir exists and user has rights
         if os.access(os.path.basename(dest_dir), os.W_OK):
             os.system("mkdir %s" % dest_dir)
         else:
-            Clizer._write_error("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir, help='')
-            return 1
+            raise RunnerError("Target folder '%s' does not exist, and cannot create it, aborting" % dest_dir)
 
     if not no_check_shebang:
         # Check that file starts with python shebang (#!/usr/bin/env python)
-        import re
-        if not re.match(r'#!\s*/usr/bin/env\s+python', open(source).readline()):
-            Clizer._write_error("Your script's first line should be '#!/usr/bin/env python', aborting", help='')
-            return 1
+        first_line = open(source).readline()
+        if not ('#!' in first_line and 'python' in first_line):
+            raise RunnerError("Your script's first line should start with '#!' and contain 'python', aborting")
 
     # Now it's time to copy or symlink file
     if target_exists:
@@ -439,12 +434,15 @@ def make_script(target_path='', target_name='', user=False, make_link=False,
         print('Script %s has been copied to %s' % (source, target))
     # check PATH and advise user to update it if relevant
     path_env = os.environ.get('PATH')
-    if not path_env or dest_dir not in path_env:
+    if not no_check_path and (not path_env or dest_dir not in path_env):
         print("Please add your local bin path [%s] to your environment PATH" % dest_dir)
+
+
+def clingon_script():
+    return clize(make_link=('m', 's', 'l'), force=('f', 'o'), target_path='p', target_name='n')(
+               set_variables(VERSION=__version__)(make_script))
 
 
 if __name__ == '__main__':
 
-    clize(make_link=('m', 's', 'l'), force=('f', 'o'), target_path='p', target_name='n')(
-        set_variables(VERSION=CLINGON_VERSION)(
-            make_script))
+    clingon_script()
