@@ -244,13 +244,14 @@ and --target-path to the specified path.
     --make-link        | -m | -s | -l (default=False)
     --force            | -f | -o (default=False)
     --remove           | -r (default=False)
-    --no-check-shebang | -n (default=False)
-    --version          | -V print version (0.1.1)
+    --no-check-shebang (default=False)
+    --no-check-path    (default=False)
+    --version          | -V print version (0.1.2)
     --help             | -? print this help
 
 
-This will copy your script to '--path' if specified, or to ~/bin if '--user' is specified or
-to your local python path by default, and set the proper execution rights.
+This will copy your script to '--target-path' if specified, or to ~/bin if '--user' is specified or
+to your local python path (default), and set the proper execution rights.
 
 This is automatically installed as a new command when clingon is installed to your machine.
 
@@ -262,4 +263,4 @@ BSD license
 Author
 ~~~~~~
 
-``(c)`` François Vincent [https://github.com/francois-vincent]
+François Vincent [https://github.com/francois-vincent]

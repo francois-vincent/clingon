@@ -364,7 +364,7 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
     For example, 'clingon script.py' will copy or symlink script.py to:
     - <python-path>/script (default),,
     - <path>/script if --target-path is specfied,
-    - ~/bin/script if --user is speified.
+    - ~/bin/script if --user is specified.
     and then set the script as executable (without the .py extension)
     """
     if user and target_path:
