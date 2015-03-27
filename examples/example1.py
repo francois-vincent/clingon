@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-import sys
-sys.path.insert(0, '..')
 from clingon import clingon
 
 # the decorator has no parameter.
@@ -20,4 +18,4 @@ def clized_default_shorts(p1, p2,
                           last_option=False):
     """Help docstring
     """
-    return '%s %s %s %s %s %s' % (p1, p2, first_option, second_option, third_option, last_option)
+    print('%s %s %s %s %s %s' % (p1, p2, first_option, second_option, third_option, last_option))

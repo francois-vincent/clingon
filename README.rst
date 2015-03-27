@@ -179,8 +179,10 @@ your parameters, but also:
 
 - Any missing required parameters,
 - Unrecognized parameter or option,
+- Duplicate option,
 - Missing value of option,
-- Duplicate option.
+- Type of option if numerical option (also for lists of numbers),
+- Number of elements in list option must match that of default if default is non empty,
 
 There's more
 ~~~~~~~~~~~~

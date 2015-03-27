@@ -13,6 +13,7 @@ from future.utils import listitems, iteritems
 from past.builtins import basestring
 
 from collections import Sequence
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -22,7 +23,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 DEBUG = False
 TEST = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -94,7 +95,10 @@ class Clizer(object):
         nb_args, len_defaults = len(argspec.args), len(defaults)
         self.reqargs = argspec.args[:nb_args - len_defaults]
         options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
-        # make a copy of options for later call of user's decorated function
+        for k, v in iteritems(options):
+            if v is True:
+                raise ValueError("Default value for boolean %r must be 'False'" % k)
+            # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
         # make an equivalence dict from line cmd style (--file-name) to python style (file_name) args
         self.options_equ = dict([('-' + x if len(x) == 1 else '--' + '-'.join(x.split('_')), x) for x in options])
@@ -111,7 +115,7 @@ class Clizer(object):
         for k in options:
             if k not in self.options_aliases and len(k) > 1:
                 self.options_aliases[k] = (k[0],)
-            # inject aliases into dicts
+                # inject aliases into dicts
         for x, t in options.items():
             if x in self.options_aliases:
                 alias = self.options_aliases[x]
@@ -139,7 +143,7 @@ class Clizer(object):
         source = os.path.dirname(self.file)
         source = ' from ' + source if source else ''
         Clizer._write_error('version %s%s (Python %s)' % (self._get_global('VERSION'), source,
-                                                   sys.version.split()[0]), help='')
+                                                          sys.version.split()[0]), help='')
 
     def start(self, param_string=None):
         optargs = {}
@@ -152,6 +156,7 @@ class Clizer(object):
             argv = sys.argv[1:]
         else:
             import shlex
+
             argv = shlex.split(param_string)
         self._eval_global()
         i = 0
@@ -175,11 +180,17 @@ class Clizer(object):
                             optargs[self.options_equ[x]].append(type(self.options[x][0])(argv[i]))
                         except ValueError:
                             raise RunnerErrorWithUsage("Argument %d of option %s has wrong type (%s expected)" %
-                                              (i - argpos, x, self._format_type(self.options[x][0])))
+                                                       (i - argpos, x, self._format_type(self.options[x][0])))
+                        except IndexError:
+                            optargs[self.options_equ[x]].append(argv[i])
                         i += 1
                     if not len(optargs[self.options_equ[x]]):
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %s" %
-                                          (x, self._format_type(self.options[x][0])))
+                                                   (x, self._format_type(self.options[x][0])))
+                    if len(self.options[x]) and len(optargs[self.options_equ[x]]) != len(self.options[x]):
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by exactly %d parameters, "
+                                                   "found %d" %
+                                                   (x, len(self.options[x]), len(optargs[self.options_equ[x]])))
                 elif type(self.options[x]) is bool:
                     optargs[self.options_equ[x]] = True
                     i += 1
@@ -187,12 +198,12 @@ class Clizer(object):
                     i += 1
                     if i >= len(argv) or argv[i] in self.options:
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a %s" %
-                                                 (x, self._format_type(self.options[x])))
+                                                   (x, self._format_type(self.options[x])))
                     try:
                         optargs[self.options_equ[x]] = type(self.options[x])(argv[i])
                     except ValueError:
                         raise RunnerErrorWithUsage("Argument of option %s has wrong type (%s expected)" %
-                                          (x, self._format_type(self.options[x])))
+                                                   (x, self._format_type(self.options[x])))
                     i += 1
             else:
                 if x.startswith('-'):
@@ -206,7 +217,7 @@ class Clizer(object):
                 i += 1
         if self.reqargs and len(reqargs) < len(self.reqargs):
             raise RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
-        # merge required, optional args and options in allargs
+            # merge required, optional args and options in allargs
         options = OrderedDict(self.python_options)
         options.update(optargs)
         allargs = reqargs
@@ -214,7 +225,7 @@ class Clizer(object):
         allargs.extend(varargs)
         if DEBUG:
             print('clize call parameters:', allargs)
-        # all parameters are filled
+            # all parameters are filled
         return self.func(*allargs)
 
     def __call__(self, param_string=None):
@@ -235,7 +246,10 @@ class Clizer(object):
 
     def _format_type(self, arg, post=''):
         if isinstance(arg, list):
-            return '<list of %s>' % self._get_type(arg[0]) + post
+            try:
+                return '<list of %s>' % self._get_type(arg[0]) + post
+            except IndexError:
+                return '<list of str>' + post
         elif isinstance(arg, bool):
             return ''
         else:
@@ -354,6 +368,7 @@ def set_variables(**kwargs):
     def f(x):
         x.variables = kwargs
         return x
+
     return f
 
 
@@ -361,18 +376,19 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
                 force=False, remove=False, no_check_shebang=False, no_check_path=False):
     """v{VERSION}
     This script makes a command line script out of a python file.
-    For example, 'clingon script.py' will copy or symlink script.py to:
-    - <python-path>/script (default),,
-    - <path>/script if --target-path is specfied,
-    - ~/bin/script if --user is specified.
-    and then set the script as executable (without the .py extension)
+    For example, 'clingon script.py' will copy or symlink script.py
+    (without the .py extension) to:
+    - <python-exe-path>/script (default),
+    - <target-path>/script if --target-path is specfied,
+    - ~/bin/script if --user is specified,
+    and then set the copy / symlink as executable.
     """
     if user and target_path:
         raise RunnerErrorWithUsage("You cannot specify --path and --user at the same time")
     source = os.path.abspath(python_script)
     dest_dir = os.path.normpath(os.path.expanduser('~/bin' if user else target_path or os.path.dirname(sys.executable)))
     target = os.path.join(dest_dir, target_name if target_name
-                else os.path.splitext(os.path.basename(source))[0])
+    else os.path.splitext(os.path.basename(source))[0])
     target_exists = os.path.exists(target)
     if remove:
         if target_exists:
@@ -392,6 +408,7 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
                 return make_link and os.path.samefile(source, target)
             else:
                 return not make_link and (open(source, 'rb').read() == open(target, 'rb').read())
+
         if same_file_same_type(source, target):
             print("Target '%s' already created, nothing to do" % target)
             return
@@ -415,6 +432,7 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
     if target_exists:
         os.unlink(target)
     import stat
+
     perms = stat.S_IXUSR | stat.S_IXGRP
     if os.getuid() == 0:
         perms |= stat.S_IXOTH
@@ -428,11 +446,12 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
         print('Script %s has been symlinked to %s' % (source, target))
     else:
         import shutil
+
         shutil.copyfile(source, target)
         st = os.stat(target)
         os.chmod(target, st.st_mode | perms)
         print('Script %s has been copied to %s' % (source, target))
-    # check PATH and advise user to update it if relevant
+        # check PATH and advise user to update it if relevant
     path_env = os.environ.get('PATH')
     if not no_check_path and (not path_env or dest_dir not in path_env):
         print("Please add your local bin path [%s] to your environment PATH" % dest_dir)
@@ -440,9 +459,8 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
 
 def clingon_script():
     return clize(make_link=('m', 's', 'l'), force=('f', 'o'), target_path='p', target_name='n')(
-               set_variables(VERSION=__version__)(make_script))
+        set_variables(VERSION=__version__)(make_script))
 
 
 if __name__ == '__main__':
-
     clingon_script()

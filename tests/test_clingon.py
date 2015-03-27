@@ -12,8 +12,6 @@ except ImportError:
 
 import sys
 
-sys.path.insert(0, '..')
-
 from clingon import clingon
 
 clingon.TEST = True
@@ -30,7 +28,7 @@ except ImportError:
     # for py26
     from ordereddict import OrderedDict
 
-test_version = '0.1.2'
+test_version = '0.1.3'
 
 
 @contextmanager
@@ -491,7 +489,7 @@ class TestDecorator(unittest.TestCase):
             clized_variables('-V')
         self.assertEqual(out.getvalue(), '')
         error = err.getvalue()
-        self.assertIn('version 1.2.3 from', error)
+        self.assertIn('version 1.2.3 ', error)
         sys_exit.assert_called_with(0)
 
 

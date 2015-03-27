@@ -41,7 +41,7 @@ setup(
     },
     license="BSD",
     zip_safe=False,
-    keywords='clingon',
+    keywords='cli',
     classifiers=[
         # 'Development Status ::  3 - Alpha',
         'Intended Audience :: Developers',

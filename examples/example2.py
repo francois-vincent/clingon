@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-import sys
-sys.path.insert(0, '..')
 from clingon import clingon
 clingon.DEBUG = True
 
@@ -15,6 +13,7 @@ clingon.DEBUG = True
 # used to generate the help text from your docstring.
 
 
+# version can be a string or a function
 def version():
     return '1.2.3'
 
@@ -30,4 +29,4 @@ def my_func(p1, p2,
     """
     if last_option:
         raise RuntimeError("Test of DEBUG")
-    return '%s %s %s %s %s %s' % (p1, p2, first_option, second_option, third_option, last_option)
+    print('%s %s %s %s %s %s' % (p1, p2, first_option, second_option, third_option, last_option))
