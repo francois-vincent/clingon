@@ -18,23 +18,26 @@
    :target: https://pypi.python.org/pypi/clingon/
 
 
-A handy command line interpreter generator
-------------------------------------------
+A super handy command line interpreter generator
+------------------------------------------------
 
 .. figure:: http://www.ex-astris-scientia.org/inconsistencies/klingons/klingon-gorkon-theundiscoveredcountry.jpg
    :alt: clingon
 
-Clingon essentially provides a function decorator that converts a python
-function into a command line script in a snap.
+Clingon is the conjunction of a function decorator and a command line tool
+that gives you the super power to create shell scripts in a snap.
 
-The decorator introspects your function signature, then parses the
-parameters of your command line. It then calls your function with
-parameters checked and instanciated from your command line. A help
-output is also automatically created from your function docstring and
-parameters, with types and default values.
+The function decorator converts a python function into a command line script
+and the command line tool can install this script where you want, ready for
+execution. You have created a new command line tool in minutes !
+
+A help output is also automatically created from your function docstring and
+signature, with types and default values.
 
 No dependency, except some standard modules (and orderddict for py26).
-Works under python 2 and 3. Tested for Cpython 2.6, 2.7, 3.3, 3.4, and Pypy.
+Works under python 2 and 3.
+Tested for Cpython 2.6, 2.7, 3.3, 3.4, and Pypy.
+Runs under linux (OSX under construction).
 
 Installation
 ~~~~~~~~~~~~
@@ -43,11 +46,15 @@ Installation
 
     $ pip install clingon
 
+This will install clingon as a module (providing the decorator) as well as a script
+(providing the script installer).
+
 How to use
 ~~~~~~~~~~
 
 That's dead simple, just prepend the decorator to your function and it
-is converted to a command line script.
+is converted to a command line script. Then you can run the installer on your
+new script if you want.
 
 Basic example
 ^^^^^^^^^^^^^
@@ -67,7 +74,7 @@ Basic example
         """
         # your code
 
-Corresponding usage examples:
+Corresponding usage examples (without installer):
 
 .. code:: sh
 
@@ -81,10 +88,10 @@ Corresponding usage examples:
     $ python script.py toto titi -f another_value -s 10 -t 16 9 -l
     $ python script.py -?
 
-You only have to follow some simple rules when defining your
+You just have to follow some simple rules when defining your
 parameters:
 
-Required parameters are defined as basic positional python parameters
+Required parameters are defined first, as basic positional python parameters
 (like the 2 first in the example above). Options are defined as python
 keyword parameters, they have default values (like the 4 last parameters
 above). As you can see, the Python parameter semantics is easily mapped
@@ -101,8 +108,9 @@ will result into a ``sys.exit(x)``. Any return value other than an int
 
 If an exception is raised in the decorated function, it will be catched
 by the decorator and converted to a one line stderr output, followed by
-a ``sys.exit(1)``. You can override this and raise the original
-exception by setting clingon.DEBUG = True immediately after the import.
+a ``sys.exit(1)``. You can override this and see the original
+exception with call stack by setting clingon.DEBUG = True immediately after
+the import.
 
 That's it ! Writing python command line scripts had never been that
 simple yet !
@@ -145,7 +153,7 @@ Automatic help
 
 A help is automatically generated, including:
 
-- Usage string, i.e. script name and parameters,
+- A usage string, i.e. script name and parameters,
 - The docstring of your function, reformated, 
 - A detailed description of the options, with names, short names, types and default values.
 
@@ -182,7 +190,7 @@ your parameters, but also:
 - Duplicate option,
 - Missing value of option,
 - Type of option if numerical option (also for lists of numbers),
-- Number of elements in list option must match that of default if default is non empty,
+- Number of elements in list option must match that of default if default is non empty.
 
 There's more
 ~~~~~~~~~~~~
@@ -194,8 +202,8 @@ number of parameters your function accepts. You can specify a lower
 limit by specifying some required parameters, but if you want to specify
 an upper limit, you have to code it explicitly into your function.
 
-You can specify variables that can be used inside the decorated function
-docstring (with usual python format() mustache notation). This allows
+Additionally, you can specify some variables that can be used inside the decorated
+function docstring (with usual python format() mustache notation). This allows
 you to have a dynamic help description. One useful usage is to include
 the version of your script into your help string.
 
@@ -218,20 +226,21 @@ example
         """
         # your code
 
-Specifying a VERSION variable will also automatically add a new option
+Specifying a VERSION variable will also automatically add a version option
 (--version \| -V).
 
-You can raise a special exception, ``RunnerErrorWithUsage`` with your
-message as a parameter. This will prepend a usage string before your error message
-in stderr output.
+Two exceptions are available:
+``RunnerError`` prompts the given message to stderr and sys.exit(1).
+``RunnerErrorWithUsage`` prepends a usage string before your error message
+in stderr and sys.exit(1).
 
 
-Bonus
-~~~~~
+Command line script installer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-As a bonus, clingon can also turn your brand new python script into a
-command available locally or globally. Just run the clingon module on
-your script, with relevant option: no option will copy clingon in the
+The clingon script can also turn your brand new python script into a new
+command available locally or globally. Just run the clingon tool on
+your script, with relevant options: zero option will copy clingon in the
 same path as python itself, --user will copy it to your ~/bin folder,
 and --target-path to the specified path.
 
@@ -252,15 +261,18 @@ and --target-path to the specified path.
     --help             | -? print this help
 
 
-This will copy your script to '--target-path' if specified, or to ~/bin if '--user' is specified or
-to your local python path (default), and set the proper execution rights.
-
-This is automatically installed as a new command when clingon is installed to your machine.
-
 Licence
 ~~~~~~~
 
 BSD license
+
+
+Cheers
+~~~~~~~
+
+CookieCutter [https://github.com/audreyr/cookiecutter]
+especially the Python section.
+
 
 Author
 ~~~~~~

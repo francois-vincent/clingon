@@ -146,18 +146,16 @@ class Clizer(object):
                                                           sys.version.split()[0]), help='')
 
     def start(self, param_string=None):
+        # construct optional args, required args and variable args as we find then in the command line
         optargs = {}
         reqargs, varargs = [], []
-        # first, search cmd line options and their args
-        # and collect them in optargs.
-        # along this process, required and optional args are also collected
-        # in reqargs and varargs
+
         if param_string is None:
             argv = sys.argv[1:]
         else:
             import shlex
-
             argv = shlex.split(param_string)
+
         self._eval_global()
         i = 0
         while i < len(argv):
@@ -169,41 +167,43 @@ class Clizer(object):
                 self._print_version()
                 return
             if x in self.options:
-                if self.options_equ[x] in optargs:
+                o_x = self.options[x]
+                oe_x = self.options_equ[x]
+                if oe_x in optargs:
                     raise RunnerError("Option '%s' found twice" % x)
-                if isinstance(self.options[x], (list, tuple)):
+                if isinstance(o_x, (list, tuple)):
                     argpos = i
-                    optargs[self.options_equ[x]] = []
+                    optargs[oe_x] = []
                     i += 1
                     while i < len(argv) and argv[i] not in self.options:
                         try:
-                            optargs[self.options_equ[x]].append(type(self.options[x][0])(argv[i]))
+                            optargs[oe_x].append(type(o_x[0])(argv[i]))
                         except ValueError:
                             raise RunnerErrorWithUsage("Argument %d of option %s has wrong type (%s expected)" %
-                                                       (i - argpos, x, self._format_type(self.options[x][0])))
+                                                       (i - argpos, x, self._format_type(o_x[0])))
                         except IndexError:
-                            optargs[self.options_equ[x]].append(argv[i])
+                            optargs[oe_x].append(argv[i])
                         i += 1
-                    if not len(optargs[self.options_equ[x]]):
+                    if not len(optargs[oe_x]):
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %s" %
-                                                   (x, self._format_type(self.options[x][0])))
-                    if len(self.options[x]) and len(optargs[self.options_equ[x]]) != len(self.options[x]):
-                        raise RunnerErrorWithUsage("Option '%s' should be followed by exactly %d parameters, "
-                                                   "found %d" %
-                                                   (x, len(self.options[x]), len(optargs[self.options_equ[x]])))
-                elif type(self.options[x]) is bool:
-                    optargs[self.options_equ[x]] = True
+                                                   (x, self._format_type(o_x[0])))
+                    if len(o_x) and len(optargs[oe_x]) != len(o_x):
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by "
+                                                   "exactly %d parameters, found %d" %
+                                                   (x, len(o_x), len(optargs[oe_x])))
+                elif type(o_x) is bool:
+                    optargs[oe_x] = True
                     i += 1
                 else:
                     i += 1
                     if i >= len(argv) or argv[i] in self.options:
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a %s" %
-                                                   (x, self._format_type(self.options[x])))
+                                                   (x, self._format_type(o_x)))
                     try:
-                        optargs[self.options_equ[x]] = type(self.options[x])(argv[i])
+                        optargs[oe_x] = type(o_x)(argv[i])
                     except ValueError:
                         raise RunnerErrorWithUsage("Argument of option %s has wrong type (%s expected)" %
-                                                   (x, self._format_type(self.options[x])))
+                                                   (x, self._format_type(o_x)))
                     i += 1
             else:
                 if x.startswith('-'):
@@ -387,8 +387,7 @@ def make_script(python_script, target_path='', target_name='', user=False, make_
         raise RunnerErrorWithUsage("You cannot specify --path and --user at the same time")
     source = os.path.abspath(python_script)
     dest_dir = os.path.normpath(os.path.expanduser('~/bin' if user else target_path or os.path.dirname(sys.executable)))
-    target = os.path.join(dest_dir, target_name if target_name
-    else os.path.splitext(os.path.basename(source))[0])
+    target = os.path.join(dest_dir, target_name if target_name else os.path.splitext(os.path.basename(source))[0])
     target_exists = os.path.exists(target)
     if remove:
         if target_exists:
