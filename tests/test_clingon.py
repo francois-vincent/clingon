@@ -313,7 +313,7 @@ class TestDecorator(unittest.TestCase):
             clized_default_shorts('p1 p2 -t')
         self.assertEqual(err.getvalue(),
                          "usage: test_clingon.py p1 p2 [options] [--help | -?]\n"
-                         "Option '-t' should be followed by a list of <int>\n")
+                         "Option '-t' should be followed by a list of 2 <int>, found 0\n")
         self.assertEqual(out.getvalue(), '')
         sys_exit.assert_called_with(clingon.SYSTEM_EXIT_ERROR_CODE)
 
