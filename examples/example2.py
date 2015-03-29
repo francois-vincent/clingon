@@ -18,7 +18,9 @@ def version():
     return '1.2.3'
 
 @clingon.clize(first_option='1', second_option=('2', 's', 'so'))
-@clingon.set_variables(VERSION=version, message="you can dynamically customize help message !")
+@clingon.set_variables(VERSION=version,
+                       message="you can dynamically customize help message !",
+                       CLINGON_PREFIX="EXAMPLE2")
 def my_func(p1, p2,
             first_option='default_value',
             second_option=5,

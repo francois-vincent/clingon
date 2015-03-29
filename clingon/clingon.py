@@ -23,7 +23,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.3'
+__version__ = '0.1.4a1'
 DEBUG = False
 TEST = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -95,10 +95,9 @@ class Clizer(object):
         nb_args, len_defaults = len(argspec.args), len(defaults)
         self.reqargs = argspec.args[:nb_args - len_defaults]
         options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
-        for k, v in iteritems(options):
-            if v is True:
-                raise ValueError("Default value for boolean %r must be 'False'" % k)
-            # make a copy of options for later call of user's decorated function
+        # override options defaults from environ
+        self.override_defaults(options)
+        # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
         # make an equivalence dict from line cmd style (--file-name) to python style (file_name) args
         self.options_equ = dict([('-' + x if len(x) == 1 else '--' + '-'.join(x.split('_')), x) for x in options])
@@ -115,7 +114,7 @@ class Clizer(object):
         for k in options:
             if k not in self.options_aliases and len(k) > 1:
                 self.options_aliases[k] = (k[0],)
-                # inject aliases into dicts
+        # inject aliases into dicts
         for x, t in options.items():
             if x in self.options_aliases:
                 alias = self.options_aliases[x]
@@ -131,6 +130,24 @@ class Clizer(object):
                     self.options_equ[k] = x
                     new_alias.append(a)
                 self.options_aliases[x] = new_alias
+        if DEBUG:
+            print('clize default parameters:', self.reqargs + options.values() +
+                                               ['*' + self.varargs] if self.varargs else [])
+
+    def override_defaults(self, options):
+        prefix = self.variables.get('CLINGON_PREFIX')
+        if prefix:
+            for k in options.keys():
+                default = os.environ.get(prefix + '_' + k.upper(), None)
+                if default is not None:
+                    try:
+                        default = eval(default, {}, {})
+                    except (SyntaxError, NameError):
+                        pass
+                    options[k] = default
+        for k, v in iteritems(options):
+            if v is True:
+                raise ValueError("Default value for boolean option %r must be 'False'" % k)
 
     def _eval_global(self):
         for k, v in listitems(self.variables):
@@ -154,6 +171,7 @@ class Clizer(object):
             argv = sys.argv[1:]
         else:
             import shlex
+
             argv = shlex.split(param_string)
 
         self._eval_global()
@@ -184,13 +202,11 @@ class Clizer(object):
                         except IndexError:
                             optargs[oe_x].append(argv[i])
                         i += 1
-                    if not len(optargs[oe_x]):
-                        raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %s" %
-                                                   (x, self._format_type(o_x[0])))
+                    if not len(optargs[oe_x]) and not len(o_x):
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by a list of values" % x)
                     if len(o_x) and len(optargs[oe_x]) != len(o_x):
-                        raise RunnerErrorWithUsage("Option '%s' should be followed by "
-                                                   "exactly %d parameters, found %d" %
-                                                   (x, len(o_x), len(optargs[oe_x])))
+                        raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %d %s, found %d" %
+                                                   (x, len(o_x), self._format_type(o_x[0]), len(optargs[oe_x])))
                 elif type(o_x) is bool:
                     optargs[oe_x] = True
                     i += 1
@@ -217,7 +233,7 @@ class Clizer(object):
                 i += 1
         if self.reqargs and len(reqargs) < len(self.reqargs):
             raise RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
-            # merge required, optional args and options in allargs
+        # merge required, optional args and options in allargs
         options = OrderedDict(self.python_options)
         options.update(optargs)
         allargs = reqargs
@@ -225,7 +241,7 @@ class Clizer(object):
         allargs.extend(varargs)
         if DEBUG:
             print('clize call parameters:', allargs)
-            # all parameters are filled
+        # all parameters are filled
         return self.func(*allargs)
 
     def __call__(self, param_string=None):

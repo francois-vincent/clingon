@@ -4,6 +4,14 @@ History
 -------
 
 
+0.1.4 (TBD)
+---------------------
+
+* some code refactoring
+* a better README
+* optionally can override default options from environ
+
+
 0.1.3 (2015-03-27)
 ---------------------
 
