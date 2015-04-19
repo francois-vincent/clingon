@@ -7,9 +7,9 @@ History
 0.1.4 (TBD)
 ---------------------
 
-* some code refactoring
+* some code refactoring and fix
 * a better README
-* optionally can override default options from environ
+* can override default options from environ, if variable CLINGON_PREFIX is defined (see example2)
 
 
 0.1.3 (2015-03-27)

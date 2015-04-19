@@ -9,8 +9,12 @@ clingon.DEBUG = True
 # will have its default short alias overridden by the decorator
 # shortcuts (you can define more than one for each parameter)
 
-# also, a second decorator allows to define variables that can be
+# Also, a second decorator allows to define variables that can be
 # used to generate the help text from your docstring.
+# Special variable CLINGON_PREFIX defines the environ prefix that
+# can be used to override options defaults.
+# In this example, you can export EXAMPLE2_THIRD_OPTION='[16, 9]'
+# to redefine the default value of option third_option.
 
 
 # version can be a string or a function

@@ -14,7 +14,9 @@ import sys
 
 from clingon import clingon
 
-clingon.TEST = True
+# this is to force decorator to delay execution of decorated function
+clingon.DELAY_EXECUTION = True
+
 clingon.DEBUG = False
 
 try:
@@ -28,7 +30,7 @@ except ImportError:
     # for py26
     from ordereddict import OrderedDict
 
-test_version = '0.1.4a1'
+test_version = '0.1.4a2'
 
 
 @contextmanager

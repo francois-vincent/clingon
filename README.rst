@@ -229,10 +229,17 @@ example
 Specifying a VERSION variable will also automatically add a version option
 (--version \| -V).
 
-Two exceptions are available:
-``RunnerError`` prompts the given message to stderr and sys.exit(1).
+There is another special variable ``CLINGON_PREFIX`` that allows you to specify
+an environment variable prefix for all your default options, giving you the possibility
+to override default options (see example2.py).
+For example, specifying ``@clingon.set_variables(CLINGON_PREFIX="MY_SCRIPT")`` in the
+example above, then having some ``export MY_SCRIPT_FIRST_OPTION="another_default_value"``
+in your environment will override ``first_option`` default value.
+
+Two convenience exceptions are available for you to use in your script:
+``RunnerError`` prompts the given message to stderr, and then sys.exit(1).
 ``RunnerErrorWithUsage`` prepends a usage string before your error message
-in stderr and sys.exit(1).
+in stderr, and then sys.exit(1).
 
 
 Command line script installer
