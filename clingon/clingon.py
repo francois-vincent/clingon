@@ -23,7 +23,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.4a2'
+__version__ = '0.1.4a3'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -46,6 +46,7 @@ class Clizer(object):
     This virtual class extracts args off the run() method of any derived subclass
     Then it extracts cmd line arguments and launches run() with matched args
     """
+    SYSTEM_EXIT = True
     _help_options = ('--help', '-?')
     _version_options = ('--version', '-V')
 
@@ -367,7 +368,6 @@ def clize(*args, **kwargs):
     kwargs = dict((k.lower(), v) for k, v in iteritems(kwargs))
 
     class mycli(Clizer):
-        SYSTEM_EXIT = True
         options_aliases = kwargs
 
     mycli.check_deco_parameters(*args, **kwargs)

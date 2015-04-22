@@ -185,7 +185,7 @@ As you can see in the example above, all options except boolean require
 a value. When calling your script, clingon not only checks the types of
 your parameters, but also: 
 
-- Any missing required parameters,
+- Any missing required parameter,
 - Unrecognized parameter or option,
 - Duplicate option,
 - Missing value of option,
@@ -194,6 +194,11 @@ your parameters, but also:
 
 There's more
 ~~~~~~~~~~~~
+
+Two convenience exceptions are available for you to use in your script:
+``RunnerError`` prompts the given message to stderr, and then sys.exit(1).
+``RunnerErrorWithUsage`` prepends a usage string before your error message
+in stderr, and then sys.exit(1).
 
 You can specify a variable list of parameters by adding a ``*args``
 parameter to your python function, with the usual constraint that it
@@ -226,20 +231,15 @@ example
         """
         # your code
 
-Specifying a VERSION variable will also automatically add a version option
-(--version \| -V).
+Specifying a ``VERSION`` variable will also automatically add a version option
+``(--version \| -V)``.
 
 There is another special variable ``CLINGON_PREFIX`` that allows you to specify
 an environment variable prefix for all your default options, giving you the possibility
 to override default options (see example2.py).
 For example, specifying ``@clingon.set_variables(CLINGON_PREFIX="MY_SCRIPT")`` in the
 example above, then having some ``export MY_SCRIPT_FIRST_OPTION="another_default_value"``
-in your environment will override ``first_option`` default value.
-
-Two convenience exceptions are available for you to use in your script:
-``RunnerError`` prompts the given message to stderr, and then sys.exit(1).
-``RunnerErrorWithUsage`` prepends a usage string before your error message
-in stderr, and then sys.exit(1).
+in your environment will override ``first_option`` default value to "another_default_value".
 
 
 Command line script installer
@@ -248,8 +248,8 @@ Command line script installer
 The clingon script can also turn your brand new python script into a new
 command available locally or globally. Just run the clingon tool on
 your script, with relevant options: zero option will copy clingon in the
-same path as python itself, --user will copy it to your ~/bin folder,
-and --target-path to the specified path.
+same path as the python executable (will be the current python venv if activated),
+--user will copy it to your ~/bin folder, and --target-path to the specified path.
 
 .. code:: sh
 
@@ -268,10 +268,47 @@ and --target-path to the specified path.
     --help             | -? print this help
 
 
+Utilities
+~~~~~~~~~
+
+There is a utility module containing a user input management class named AreYouSure.
+This class implements a binary (True or False) oracle with the capacity to lock its
+state to be always True or always False.
+
+Typical usage (see example4.py):
+
+.. code:: python
+
+    # file script.py
+    from clingon import clingon
+    from clingon.utils import AreYouSure
+    import os.path
+
+    @clingon.clize
+    def copy(source, dest, force=False):
+        if (os.path.exists(dest) and
+            (force or AreYouSure(all_yes=None, all_no=None)('%s already exists, replace it' % dest))):
+            print("replacing %s" % dest)
+
+
+This will result in user input prompt:
+
+.. code:: sh
+
+    dest already exists, replace it [yes,y,no(default)] ?
+
+
 Licence
 ~~~~~~~
 
 BSD license
+
+
+See also
+~~~~~~~~
+
+clint [https://pypi.python.org/pypi/clint/]
+comes with excellent support for colors, indentation, multi-columns and progress-bar
 
 
 Cheers

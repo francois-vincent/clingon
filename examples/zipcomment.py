@@ -9,8 +9,8 @@ import zipfile
 
 @clingon.clize(clear='C', list_members=('l', 'm'), time_show=('t', 's'))
 def toto(arch_name, comment='', clear=False, read_comment=False, list_members=False, time_show=False):
-    """ Small utility for testing zip file comment modification
-        without changing file modification time.
+    """ Small utility for changing comment in a zip file
+        without changing the file modification datetime.
     """
     if comment and clear:
         clingon.RunnerError("You cannot specify --comment and --clear together")
