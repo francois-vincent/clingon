@@ -272,8 +272,8 @@ Utilities
 ~~~~~~~~~
 
 There is a utility module containing a user input management class named AreYouSure.
-This class implements a binary (True or False) oracle with the capacity to lock its
-state to be always True or always False.
+This class implements a highly customizable binary (True or False) oracle with the capacity
+to lock its state to be always True or always False.
 
 Typical usage (see example4.py):
 
@@ -285,10 +285,12 @@ Typical usage (see example4.py):
     import os.path
 
     @clingon.clize
-    def copy(source, dest, force=False):
-        if (os.path.exists(dest) and
-            (force or AreYouSure(all_yes=None, all_no=None)('%s already exists, replace it' % dest))):
-            print("replacing %s" % dest)
+    def copy(source, dest=[], force=False):
+        ays = AreYouSure()
+        for d in dest:
+            if os.path.exists(d) and (force or ays('%s already exists, replace it' % d)):
+                print("replacing %s" % dest)
+                ....
 
 
 This will result in user input prompt:
@@ -296,6 +298,12 @@ This will result in user input prompt:
 .. code:: sh
 
     dest already exists, replace it [yes,y,no(default)] ?
+
+typing 'y' or 'yes' on an item will print ``replacing dest`` for this item, typing 'no' or
+just hitting enter key will skip the item. Typing 'ALL' will skip prompt print for each item,
+and typing 'NONE' will skip all prompts and items.
+The prompt message, all the expected inputs, default when hitting enter key, and case
+consideration are customizable.
 
 
 Licence

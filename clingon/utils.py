@@ -39,6 +39,14 @@ class AreYouSure(object):
                  yes=('yes', 'y'), yes_ignore_case=True, yes_default='no',
                  all_yes=('ALL',), all_no=('NONE',), all_ignore_case=False):
         self.reset_all()
+        if self.yes_default in self.yes:
+            self.expect = ','.join(self.yes) + '(default)'
+        else:
+            self.expect = ','.join(self.yes) + ',' + self.yes_default + '(default)'
+        if self.all_yes:
+            self.expect += ',' + ','.join(self.all_yes)
+        if self.all_no:
+            self.expect += ',' + ','.join(self.all_no)
 
     def reset_all(self):
         self.all_yes_locked = False
@@ -50,15 +58,7 @@ class AreYouSure(object):
         if self.all_no_locked:
             return
         message = args[0] if args else self.message
-        if self.yes_default in self.yes:
-            expect = ','.join(self.yes) + '(default)'
-        else:
-            expect = ','.join(self.yes) + ',' + self.yes_default + '(default)'
-        if self.all_yes:
-            expect += ',' + ','.join(self.all_yes)
-        if self.all_no:
-            expect += ',' + ','.join(self.all_no)
-        rep = input('%s [%s] ? ' % (message, expect))
+        rep = input('%s [%s] ? ' % (message, self.expect))
         all_rep = rep.lower() if self.all_ignore_case else rep
         if self.all_yes and all_rep in self.all_yes:
             self.all_yes_locked = True
