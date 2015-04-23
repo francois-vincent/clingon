@@ -5,25 +5,11 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-from contextlib import contextmanager
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-import sys
+from . import captured_output
 
 from clingon.utils import AreYouSure
 
-
-@contextmanager
-def captured_output():
-    try:
-        sys.stdout, sys.stderr = StringIO(), StringIO()
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
 
 class TestAreYouSure(unittest.TestCase):
@@ -32,6 +18,7 @@ class TestAreYouSure(unittest.TestCase):
         with captured_output() as (out, err):
             self.assertTrue(ays(input='yes'))
             self.assertEqual(out.getvalue(), 'Are you sure [yes,y,no(default),ALL,NONE] ? ')
+            self.assertEqual(err.getvalue(), '')
             self.assertTrue(ays(input='y'))
             self.assertTrue(ays(input='Y'))
             self.assertFalse(ays(input=''))

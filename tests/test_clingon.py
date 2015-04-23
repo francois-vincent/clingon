@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-from contextlib import contextmanager
 import mock
 
 try:
@@ -9,8 +8,13 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+try:
+    from collections import OrderedDict
+except ImportError:
+    # for py26
+    from ordereddict import OrderedDict
 
-import sys
+from . import captured_output
 
 from clingon import clingon
 
@@ -19,27 +23,7 @@ clingon.DELAY_EXECUTION = True
 
 clingon.DEBUG = False
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    # for py26
-    from ordereddict import OrderedDict
-
 test_version = '0.1.4'
-
-
-@contextmanager
-def captured_output():
-    try:
-        sys.stdout, sys.stderr = StringIO(), StringIO()
-        yield sys.stdout, sys.stderr
-    finally:
-        sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
 # ---------- here are decorated functions under test -------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,9 +83,9 @@ def clized_variables_one_short(p1, p2, option='default_value'):
     """
     pass
 
-
 # ---------- end of decorated functions under test --------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 class TestDecoratorBasic(unittest.TestCase):
     def test_version(self):

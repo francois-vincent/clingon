@@ -4,12 +4,12 @@ History
 -------
 
 
-0.1.4 (TBD)
+0.1.4 (2015-04-23)
 ---------------------
 
 * can override default options from environ, via variable CLINGON_PREFIX (see example2)
-* added a utility class for user input management, with unittests
-* a better README
+* utility class for user input management, with unittests
+* updated README
 * fix debug output 'clize default parameters'
 * some code refactoring
 
