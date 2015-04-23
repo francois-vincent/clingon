@@ -8,7 +8,7 @@ History
 ---------------------
 
 * can override default options from environ, via variable CLINGON_PREFIX (see example2)
-* added a utility class for user input management
+* added a utility class for user input management, with unittests
 * a better README
 * fix debug output 'clize default parameters'
 * some code refactoring

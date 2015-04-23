@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from builtins import input
+from builtins import input as user_input
 import inspect
+import sys
 
 
 def auto_update_attrs_from_kwargs(method):
@@ -35,14 +36,15 @@ class AreYouSure(object):
        or always False.
     """
     @auto_update_attrs_from_kwargs
-    def __init__(self, message='are you sure',
-                 yes=('yes', 'y'), yes_ignore_case=True, yes_default='no',
+    def __init__(self, message='Are you sure', output='stdout',
+                 yes=('yes', 'y'), yes_ignore_case=True,
+                 yes_default='no', default='default',
                  all_yes=('ALL',), all_no=('NONE',), all_ignore_case=False):
         self.reset_all()
         if self.yes_default in self.yes:
-            self.expect = ','.join(self.yes) + '(default)'
+            self.expect = ','.join(self.yes) + '(%s)' % self.default
         else:
-            self.expect = ','.join(self.yes) + ',' + self.yes_default + '(default)'
+            self.expect = ','.join(self.yes) + ',%s(%s)' % (self.yes_default, self.default)
         if self.all_yes:
             self.expect += ',' + ','.join(self.all_yes)
         if self.all_no:
@@ -52,13 +54,15 @@ class AreYouSure(object):
         self.all_yes_locked = False
         self.all_no_locked = False
 
-    def __call__(self, *args):
+    def __call__(self, message=None, input=None):
         if self.all_yes_locked:
             return True
         if self.all_no_locked:
             return
-        message = args[0] if args else self.message
-        rep = input('%s [%s] ? ' % (message, self.expect))
+        message = self.message if message is None else message
+        output = sys.stdout if self.output == 'stdout' else sys.stderr
+        output.write('%s [%s] ? ' % (message, self.expect))
+        rep = user_input() if input is None else input
         all_rep = rep.lower() if self.all_ignore_case else rep
         if self.all_yes and all_rep in self.all_yes:
             self.all_yes_locked = True

@@ -30,7 +30,7 @@ except ImportError:
     # for py26
     from ordereddict import OrderedDict
 
-test_version = '0.1.4a3'
+test_version = '0.1.4rc1'
 
 
 @contextmanager

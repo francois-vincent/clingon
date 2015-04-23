@@ -285,11 +285,11 @@ Typical usage (see example4.py):
     import os.path
 
     @clingon.clize
-    def copy(source, dest=[], force=False):
-        ays = AreYouSure()
+    def copy(source, force=False, *dest):
+        ays = AreYouSure(output='stderr')
         for d in dest:
             if os.path.exists(d) and (force or ays('%s already exists, replace it' % d)):
-                print("replacing %s" % dest)
+                print("replacing %s" % d)
                 ....
 
 
@@ -297,13 +297,13 @@ This will result in user input prompt:
 
 .. code:: sh
 
-    dest already exists, replace it [yes,y,no(default)] ?
+    dest already exists, replace it [yes,y,no(default),ALL,NONE] ?
 
 typing 'y' or 'yes' on an item will print ``replacing dest`` for this item, typing 'no' or
-just hitting enter key will skip the item. Typing 'ALL' will skip prompt print for each item,
-and typing 'NONE' will skip all prompts and items.
+just hitting enter key will skip the item. Typing 'ALL' will skip prompt but perform print
+for each item, and typing 'NONE' will skip all prompts and prints.
 The prompt message, all the expected inputs, default when hitting enter key, and case
-consideration are customizable.
+considerations are customizable.
 
 
 Licence
