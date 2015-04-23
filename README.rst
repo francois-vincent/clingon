@@ -299,11 +299,11 @@ This will result in user input prompt:
 
     dest already exists, replace it [yes,y,no(default),ALL,NONE] ?
 
-typing 'y' or 'yes' on an item will print ``replacing dest`` for this item, typing 'no' or
+Typing 'y' or 'yes' on an item will print ``replacing dest`` for this item, typing 'no' or
 just hitting enter key will skip the item. Typing 'ALL' will skip prompt but perform print
 for each item, and typing 'NONE' will skip all prompts and prints.
-The prompt message, all the expected inputs, default when hitting enter key, and case
-considerations are customizable.
+The prompt message, its destination (stdout or stderr), all the expected inputs, default when
+hitting enter key, and case considerations are customizable.
 
 
 Licence

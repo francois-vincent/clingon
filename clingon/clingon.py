@@ -23,7 +23,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.4rc1'
+__version__ = '0.1.4'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
