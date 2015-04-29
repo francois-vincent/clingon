@@ -11,7 +11,6 @@ from . import captured_output
 from clingon.utils import AreYouSure
 
 
-
 class TestAreYouSure(unittest.TestCase):
     def test_default_single(self):
         ays = AreYouSure()

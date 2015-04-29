@@ -4,6 +4,12 @@ History
 -------
 
 
+0.1.5 (TBD)
+---------------------
+
+* code refactor and additional comments
+
+
 0.1.4 (2015-04-23)
 ---------------------
 

@@ -15,6 +15,7 @@ def auto_update_attrs_from_kwargs(method):
      ...
      in the decorated method (typically __init__)
     """
+
     def wrapped(self, **kwargs):
         # method signature introspection
         argspec = inspect.getargspec(method)
@@ -27,6 +28,7 @@ def auto_update_attrs_from_kwargs(method):
         # update attributes of instance
         self.__dict__.update(options)
         method(self, **kwargs)
+
     return wrapped
 
 

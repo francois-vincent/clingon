@@ -23,7 +23,7 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.4'
+__version__ = '0.1.5a1'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -150,78 +150,96 @@ class Clizer(object):
             if v is True:
                 raise ValueError("Default value for boolean option %r must be 'False'" % k)
 
-    def _eval_global(self):
+    def _eval_variables(self):
+        """evaluates variables, especially those that are callable
+        """
         for k, v in listitems(self.variables):
             self.variables[k] = v() if hasattr(v, '__call__') else v
 
-    def _get_global(self, key):
+    def _get_variable(self, key):
         return self.variables.get(key)
 
     def _print_version(self):
         source = os.path.dirname(self.file)
         source = ' from ' + source if source else ''
-        Clizer._write_error('version %s%s (Python %s)' % (self._get_global('VERSION'), source,
-                                                          sys.version.split()[0]), help='')
+        Clizer._write_error('version %s%s (Python %s)' %
+                            (self._get_variable('VERSION'), source, sys.version.split()[0]), help='')
 
     def start(self, param_string=None):
         # construct optional args, required args and variable args as we find then in the command line
         optargs = {}
         reqargs, varargs = [], []
 
+        # get parameters from command line, or from parameter string (latter essentially for tests)
         if param_string is None:
             argv = sys.argv[1:]
         else:
             import shlex
-
             argv = shlex.split(param_string)
 
-        self._eval_global()
+        self._eval_variables()
         i = 0
         while i < len(argv):
+            # get next parameter
             x = argv[i]
+            # check for help
             if x in self._help_options:
                 self._print_help()
                 return
-            if x in self._version_options and self._get_global('VERSION'):
+            # check for version
+            if x in self._version_options and self._get_variable('VERSION'):
                 self._print_version()
                 return
+            # parameter is an option
             if x in self.options:
                 o_x = self.options[x]
                 oe_x = self.options_equ[x]
+                # check for duplicates
                 if oe_x in optargs:
                     raise RunnerError("Option '%s' found twice" % x)
+                # proceed with lists or tuples
                 if isinstance(o_x, (list, tuple)):
                     argpos = i
                     optargs[oe_x] = []
                     i += 1
+                    # iterate till end of parameters list, or to next option occurrence
                     while i < len(argv) and argv[i] not in self.options:
+                        # try to convert element to expected type, then store it
                         try:
                             optargs[oe_x].append(type(o_x[0])(argv[i]))
                         except ValueError:
                             raise RunnerErrorWithUsage("Argument %d of option %s has wrong type (%s expected)" %
                                                        (i - argpos, x, self._format_type(o_x[0])))
+                        # if no expected type, just store element
                         except IndexError:
                             optargs[oe_x].append(argv[i])
                         i += 1
+                    # check that list option is not empty
                     if not len(optargs[oe_x]) and not len(o_x):
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a list of values" % x)
+                    # check number of element if default list/tuple is not empty
                     if len(o_x) and len(optargs[oe_x]) != len(o_x):
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a list of %d %s, found %d" %
                                                    (x, len(o_x), self._format_type(o_x[0]), len(optargs[oe_x])))
+                # proceed boolean
                 elif type(o_x) is bool:
                     optargs[oe_x] = True
                     i += 1
+                # proceed other types (string, integer, float)
                 else:
                     i += 1
+                    # check that option is given a value
                     if i >= len(argv) or argv[i] in self.options:
                         raise RunnerErrorWithUsage("Option '%s' should be followed by a %s" %
                                                    (x, self._format_type(o_x)))
+                    # try to convert element to expected type, then store it
                     try:
                         optargs[oe_x] = type(o_x)(argv[i])
                     except ValueError:
                         raise RunnerErrorWithUsage("Argument of option %s has wrong type (%s expected)" %
                                                    (x, self._format_type(o_x)))
                     i += 1
+            # parameter may be a required or a variable parameter, or unrecognized
             else:
                 if x.startswith('-'):
                     raise RunnerErrorWithUsage("Unrecognized option '%s'" % argv[i])
@@ -232,6 +250,7 @@ class Clizer(object):
                 else:
                     raise RunnerErrorWithUsage("Unrecognized parameter '%s'" % argv[i])
                 i += 1
+        # check number of required parameters
         if self.reqargs and len(reqargs) < len(self.reqargs):
             raise RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
         # merge required, optional args and options in allargs
@@ -242,7 +261,7 @@ class Clizer(object):
         allargs.extend(varargs)
         if DEBUG:
             print('clize call parameters:', allargs)
-        # all parameters are filled
+        # all parameters are filled, call wrapped function
         return self.func(*allargs)
 
     def __call__(self, param_string=None):
@@ -296,7 +315,7 @@ class Clizer(object):
             basename=(os.path.basename(self.file)),
             reqargs=' '.join(self.reqargs) + ' ',
             varargs='[varargs] ' if self.varargs else '',
-            version='[' + ' | '.join(self._version_options) + '] ' if self._get_global('VERSION') else '',
+            version='[' + ' | '.join(self._version_options) + '] ' if self._get_variable('VERSION') else '',
             help='[' + ' | '.join(self._help_options) + ']'
         )
         many_options = False
@@ -341,10 +360,10 @@ class Clizer(object):
             width = max(len(k) for k in self._options)
             for x, t in self._options.items():
                 print(self._format_option(x, t, width))
-            if self._get_global('VERSION'):
+            if self._get_variable('VERSION'):
                 print('{0:{1}}'.format(self._version_options[0], width), end=' ')
                 print('| ' + ' | '.join(self._version_options[1:]), 'print version',
-                      '(%s)' % self._get_global('VERSION'))
+                      '(%s)' % self._get_variable('VERSION'))
             print('{0:{1}}'.format(self._help_options[0], width), end=' ')
             print('| ' + ' | '.join(self._help_options[1:]), 'print this help')
             print()
