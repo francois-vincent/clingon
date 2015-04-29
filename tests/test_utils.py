@@ -70,9 +70,7 @@ class TestAreYouSure(unittest.TestCase):
         self.assertEqual(out.getvalue(), 'Proceed [yes,y,no(default),ALL,NONE] ? ')
 
     def test_french(self):
-        ays = AreYouSure(message="Etes-vous sûr", yes=('oui', 'o'),
-                         yes_default='non', default='défault',
-                         all_yes=('TOUS',), all_no=('AUCUN',))
+        ays = AreYouSure(**AreYouSure.french_defaults)
         with captured_output() as (out, err):
             self.assertTrue(ays(input='oui'))
             self.assertEqual(out.getvalue(), 'Etes-vous sûr [oui,o,non(défault),TOUS,AUCUN] ? ')

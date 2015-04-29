@@ -8,6 +8,7 @@ History
 ---------------------
 
 * code refactor and additional comments
+* added french and spanish defaults in user input utility class
 
 
 0.1.4 (2015-04-23)

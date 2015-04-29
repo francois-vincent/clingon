@@ -37,6 +37,13 @@ class AreYouSure(object):
        with the capacity to lock its state to be always True
        or always False.
     """
+    french_defaults = dict(message="Etes-vous sûr", yes=('oui', 'o'),
+                          yes_default='non', default='défault',
+                         all_yes=('TOUS',), all_no=('AUCUN',))
+    spanish_defaults = dict(message="¿Estás seguro", yes=('sí', 's'),
+                          yes_default='no', default='defecto',
+                         all_yes=('TODOS',), all_no=('NINGUN',))
+
     @auto_update_attrs_from_kwargs
     def __init__(self, message='Are you sure', output='stdout',
                  yes=('yes', 'y'), yes_ignore_case=True,
