@@ -18,12 +18,13 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+import glob
 import inspect
 import os
 import sys
 import textwrap
 
-__version__ = '0.1.5a1'
+__version__ = '0.2.0a1'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -85,7 +86,7 @@ class Clizer(object):
         self.docstring = func.__doc__
         self.file = inspect.getfile(func)
         self.variables = getattr(func, 'variables', {})
-        argspec = inspect.getargspec(self.func)
+        argspec = inspect.getargspec(func)
         # do not allow keywords
         if argspec.keywords:
             raise TypeError("Keywords parameter '**%s' is not allowed" % argspec.keywords)
@@ -97,7 +98,10 @@ class Clizer(object):
         self.reqargs = argspec.args[:nb_args - len_defaults]
         options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
         # override options defaults from environ
-        self.override_defaults(options)
+        self.override_defaults_from_environ(options)
+        # override options defaults from configuration file
+        self.override_defaults_from_file(options)
+        self._check_booleans(options)
         # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
         # make an equivalence dict from line cmd style (--file-name) to python style (file_name) args
@@ -135,10 +139,16 @@ class Clizer(object):
             print('clize default parameters:',
                   self.reqargs + options.values() + (['*' + self.varargs] if self.varargs else []))
 
-    def override_defaults(self, options):
+    @staticmethod
+    def _check_booleans(options):
+        for k, v in iteritems(options):
+            if v is True:
+                raise ValueError("Default value for boolean option %r must be 'False'" % k)
+
+    def override_defaults_from_environ(self, options):
         prefix = self.variables.get('CLINGON_PREFIX')
         if prefix:
-            for k in options.keys():
+            for k in list(options):
                 default = os.environ.get(prefix + '_' + k.upper(), None)
                 if default is not None:
                     try:
@@ -146,9 +156,67 @@ class Clizer(object):
                     except (SyntaxError, NameError):
                         pass
                     options[k] = default
-        for k, v in iteritems(options):
-            if v is True:
-                raise ValueError("Default value for boolean option %r must be 'False'" % k)
+
+    def _get_dict_from_file(self, file, path=None):
+        if path:
+            file = os.path.join(path, file)
+        try:
+            file = glob.glob(file)[0]
+        except IndexError:
+            raise RuntimeError("Defaults parameter file %s not found" % file)
+        _, ext = os.path.splitext(file)
+        if ext == '.py':
+            defaults = {}
+            execfile(file, {}, defaults)
+        elif ext in ('.yml', '.yaml'):
+            import yaml
+            with open(file, 'r') as f:
+                defaults = yaml.load(f)
+        elif ext == '.json':
+            import json
+            with open(file, 'r') as f:
+                defaults = json.load(f)
+        else:
+            raise RuntimeError("Unknown defaults file format %s" % file)
+        return file, defaults
+
+    def override_defaults_from_file(self, options):
+        """
+        Search and read a configuration file to override defaults
+        search order is:
+        - hardcoded path in variable DEFAULTS_PATH if existing,
+        - local directory,
+        - ~/.clingon/,
+        - /etc/clingon/,
+        The name of the configuration file is clingon_defaults.[py|yml|json] by default
+        and can be overriden by:
+        - variable DEFAULTS_FILE,
+        - optional special parameter --defaults_file
+        If a defaults configuration file is found, sets the variable
+        defaults_path_file to effective_path/effective_file.
+        """
+        defaults_file = options.get('defaults_file',  self.variables.get('DEFAULTS_FILE', 'clingon_defaults.*'))
+        defaults_path = self.variables.get('DEFAULTS_PATH')
+        defaults = None
+        if defaults_path or os.path.isabs(defaults_file):
+            defaults_path_file, defaults = self._get_dict_from_file(defaults_file, defaults_path)
+        else:
+            for path in (os.getcwd(), os.path.expanduser('~/.clingon'), '/etc/clingon/'):
+                try:
+                    defaults_path_file, defaults = self._get_dict_from_file(defaults_file, path)
+                    break
+                except RuntimeError:
+                    pass
+        if defaults:
+            for k in list(options):
+                default = defaults.get(k)
+                if default is not None:
+                    try:
+                        default = eval(default, {}, {})
+                    except (SyntaxError, NameError, TypeError):
+                        pass
+                    options[k] = default
+            self.variables['defaults_path_file'] = defaults_path_file
 
     def _eval_variables(self):
         """evaluates variables, especially those that are callable
