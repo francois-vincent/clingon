@@ -23,7 +23,9 @@ import os
 import sys
 import textwrap
 
-__version__ = '0.1.5a1'
+from clingon.utils import read_configuration
+
+__version__ = '0.2.0a1'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -50,9 +52,11 @@ class Clizer(object):
     _help_options = ('--help', '-?')
     _version_options = ('--version', '-V')
 
-    @staticmethod
-    def _write_error(*args, **kwargs):
+    @classmethod
+    def _write_error(cls, *args, **kwargs):
         sys.stderr.write(kwargs.get('sep', ' ').join(args) + kwargs.get('end', '\n'))
+        if kwargs.get('exit', True):
+            return cls._sys_exit()
 
     @staticmethod
     def _get_type(arg):
@@ -85,7 +89,7 @@ class Clizer(object):
         self.docstring = func.__doc__
         self.file = inspect.getfile(func)
         self.variables = getattr(func, 'variables', {})
-        argspec = inspect.getargspec(self.func)
+        argspec = inspect.getargspec(func)
         # do not allow keywords
         if argspec.keywords:
             raise TypeError("Keywords parameter '**%s' is not allowed" % argspec.keywords)
@@ -97,7 +101,10 @@ class Clizer(object):
         self.reqargs = argspec.args[:nb_args - len_defaults]
         options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
         # override options defaults from environ
-        self.override_defaults(options)
+        self.override_defaults_from_environ(options)
+        # override options defaults from configuration file
+        self.override_defaults_from_file(options)
+        self._check_booleans(options)
         # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
         # make an equivalence dict from line cmd style (--file-name) to python style (file_name) args
@@ -135,10 +142,16 @@ class Clizer(object):
             print('clize default parameters:',
                   self.reqargs + options.values() + (['*' + self.varargs] if self.varargs else []))
 
-    def override_defaults(self, options):
+    @classmethod
+    def _check_booleans(cls, options):
+        for k, v in iteritems(options):
+            if v is True:
+                cls._write_error("Default value for boolean option %r must be 'False'" % k)
+
+    def override_defaults_from_environ(self, options):
         prefix = self.variables.get('CLINGON_PREFIX')
         if prefix:
-            for k in options.keys():
+            for k in list(options):
                 default = os.environ.get(prefix + '_' + k.upper(), None)
                 if default is not None:
                     try:
@@ -146,9 +159,54 @@ class Clizer(object):
                     except (SyntaxError, NameError):
                         pass
                     options[k] = default
-        for k, v in iteritems(options):
-            if v is True:
-                raise ValueError("Default value for boolean option %r must be 'False'" % k)
+
+    def override_defaults_from_file(self, options):
+        """
+        Search and read a configuration file to override defaults.
+        Available formats are python, yaml and json (file extension rules).
+        By default, there is no configuration file and this method exits immediately.
+        To define a configuration file, use:
+        - variable DEFAULTS_FILE,
+        - optional special parameter --defaults_file
+        search order is:
+        - hardcoded if file is an absolute path,
+        - hardcoded path in variable DEFAULTS_PATH if existing,
+        - local directory,
+        - ~/.clingon/,
+        - /etc/clingon/,
+        If a configuration file is found, sets the variable
+        defaults_path_file to effective_path/effective_file.
+        """
+        defaults_file = options.get('defaults_file',  self.variables.get('DEFAULTS_FILE'))
+        if not defaults_file:
+            self.variables['defaults_path_file'] = None
+            return
+        defaults_path = self.variables.get('DEFAULTS_PATH')
+        defaults, defaults_path_file = None, None
+        try:
+            if defaults_path or os.path.isabs(defaults_file):
+                defaults_path_file, defaults = read_configuration(defaults_file, defaults_path)
+            else:
+                for path in (os.getcwd(), os.path.expanduser('~/.clingon'), '/etc/clingon/'):
+                    try:
+                        defaults_path_file, defaults = read_configuration(defaults_file, path)
+                        break
+                    except RuntimeError as e:
+                        error = e
+        except (RuntimeError, TypeError) as e:
+            self._write_error(str(e))
+        self.variables['defaults_path_file'] = defaults_path_file
+        if defaults:
+            for k in list(options):
+                default = defaults.get(k)
+                if default is not None:
+                    try:
+                        default = eval(default, {}, {})
+                    except (SyntaxError, NameError, TypeError):
+                        pass
+                    options[k] = default
+        else:
+            self._write_error(str(error))
 
     def _eval_variables(self):
         """evaluates variables, especially those that are callable
@@ -162,8 +220,8 @@ class Clizer(object):
     def _print_version(self):
         source = os.path.dirname(self.file)
         source = ' from ' + source if source else ''
-        Clizer._write_error('version %s%s (Python %s)' %
-                            (self._get_variable('VERSION'), source, sys.version.split()[0]), help='')
+        self._write_error('version %s%s (Python %s)' %
+                            (self._get_variable('VERSION'), source, sys.version.split()[0]), exit=False)
 
     def start(self, param_string=None):
         # construct optional args, required args and variable args as we find then in the command line
@@ -266,19 +324,17 @@ class Clizer(object):
 
     def __call__(self, param_string=None):
         try:
-            code = self.start(param_string)
+            self._sys_exit(self.start(param_string))
         except RunnerErrorWithUsage as e:
             self._print_usage(file=sys.stderr)
-            Clizer._write_error(str(e), help='')
+            return self._write_error(str(e))
         except RunnerError as e:
-            Clizer._write_error(str(e))
+            return self._write_error(str(e))
         except Exception as e:
-            Clizer._write_error(str(e), help='')
+            self._write_error(str(e), exit=False)
             if DEBUG:
                 raise
-        else:
-            return self.__class__._sys_exit(code)
-        return self.__class__._sys_exit()
+            return self._sys_exit()
 
     def _format_type(self, arg, post=''):
         if isinstance(arg, list):
@@ -402,7 +458,9 @@ def clize(*args, **kwargs):
 
 def set_variables(**kwargs):
     def f(x):
-        x.variables = kwargs
+        if not hasattr(x, 'variables'):
+            x.variables = {}
+        x.variables.update(kwargs)
         return x
 
     return f

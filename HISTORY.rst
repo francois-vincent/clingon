@@ -4,9 +4,10 @@ History
 -------
 
 
-0.1.5 (TBD)
+0.2.0 (2016-07-20)
 ---------------------
 
+* new feature: allow overloading of default values from configuration file (python, yaml, json)
 * code refactor and additional comments
 * added french and spanish defaults in user input utility class
 

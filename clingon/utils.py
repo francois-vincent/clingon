@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from builtins import input as user_input
+import glob
 import inspect
+import os.path
 import sys
 
 
@@ -82,3 +84,27 @@ class AreYouSure(object):
         rep = rep or self.yes_default
         if (rep.lower() if self.yes_ignore_case else rep) in self.yes:
             return True
+
+
+def read_configuration(file, path=None):
+    if path:
+        file = os.path.join(path, file)
+    try:
+        file = glob.glob(file)[0]
+    except IndexError:
+        raise RuntimeError("File %s not found" % file)
+    _, ext = os.path.splitext(file)
+    if ext == '.py':
+        defaults = {}
+        execfile(file, {}, defaults)
+    elif ext in ('.yml', '.yaml'):
+        import yaml
+        with open(file, 'r') as f:
+            defaults = yaml.load(f)
+    elif ext == '.json':
+        import simplejson as json
+        with open(file, 'r') as f:
+            defaults = json.load(f)
+    else:
+        raise TypeError("Unknown file format %s" % file)
+    return file, defaults
