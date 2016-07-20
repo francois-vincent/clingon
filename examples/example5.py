@@ -3,14 +3,14 @@
 from __future__ import print_function
 from clingon import clingon
 
-# you can comment lines 10 and/or 12 to change defaults file definition
+# comment/uncomment lines 10 and 12 to change defaults file definition
 
 
 @clingon.clize
 # @clingon.set_variables(DEFAULTS_FILE='defaults.json')
 def clized_default_shorts(p1, p2,
-                          # defaults_file='defaults.yml',
-                          first_option='default_value',
+                          defaults_file='defaults.yml',
+                          first_option='default value',
                           second_option=5,
                           third_option=[4, 3],
                           last_option=False):

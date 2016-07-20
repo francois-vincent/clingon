@@ -241,6 +241,11 @@ For example, specifying ``@clingon.set_variables(CLINGON_PREFIX="MY_SCRIPT")`` i
 example above, then having some ``export MY_SCRIPT_FIRST_OPTION="another_default_value"``
 in your environment will override ``first_option`` default value to "another_default_value".
 
+Another default value override mechanism is provided through configuration files.
+For example, adding decorator ``@clingon.set_variables(DEFAULTS_FILE='defaults.yml')`` will search
+and read a configuration file specifing overrides for defaults values.
+Supported configuration formats are python, yaml and json. See example5.py and docstring of method
+``override_defaults_from_file`` for more details on this feature.
 
 Command line script installer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

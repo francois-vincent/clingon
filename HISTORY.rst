@@ -4,13 +4,12 @@ History
 -------
 
 
-0.2.0 (TBD)
+0.2.0 (2016-07-20)
 ---------------------
 
-* new feature: allow overloading of default values from configuration file (ini, yaml, json, python)
+* new feature: allow overloading of default values from configuration file (python, yaml, json)
 * code refactor and additional comments
 * added french and spanish defaults in user input utility class
-* allow None as a default value, synonym to empty string ('')
 
 
 0.1.4 (2015-04-23)
