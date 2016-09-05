@@ -235,17 +235,21 @@ Specifying a ``VERSION`` variable will also automatically add a version option
 ``(--version \| -V)``.
 
 There is another special variable ``CLINGON_PREFIX`` that allows you to specify
-an environment variable prefix for all your default options, giving you the possibility
-to override default options (see example2.py).
+an environment variable prefix for all your options, giving you the possibility
+to override options (see example2.py).
 For example, specifying ``@clingon.set_variables(CLINGON_PREFIX="MY_SCRIPT")`` in the
-example above, then having some ``export MY_SCRIPT_FIRST_OPTION="another_default_value"``
-in your environment will override ``first_option`` default value to "another_default_value".
+example above, then having some ``export MY_SCRIPT_FIRST_OPTION="another_option_value"``
+in your environment will override ``first_option`` value to "another_option_value".
 
-Another default value override mechanism is provided through configuration files.
+Another value override mechanism is provided through configuration files.
 For example, adding decorator ``@clingon.set_variables(DEFAULTS_FILE='defaults.yml')`` will search
-and read a configuration file specifing overrides for defaults values.
+and read a configuration file specifing overrides for options values.
 Supported configuration formats are python, yaml and json. See example5.py and docstring of method
-``override_defaults_from_file`` for more details on this feature.
+``get_options_from_file`` for more details on this feature.
+
+As you can specify options values via 3 different ways (command line, environment variables and configuration file),
+there is a priority order: command line takes priority over configuration file wich tackes priority over environment
+variables.
 
 Command line script installer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -25,7 +25,7 @@ import textwrap
 
 from clingon.utils import read_configuration
 
-__version__ = '0.2.0a1'
+__version__ = '0.3.0'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -100,10 +100,6 @@ class Clizer(object):
         nb_args, len_defaults = len(argspec.args), len(defaults)
         self.reqargs = argspec.args[:nb_args - len_defaults]
         options = OrderedDict(zip((x.lower() for x in argspec.args[nb_args - len_defaults:]), defaults))
-        # override options defaults from environ
-        self.override_defaults_from_environ(options)
-        # override options defaults from configuration file
-        self.override_defaults_from_file(options)
         self._check_booleans(options)
         # make a copy of options for later call of user's decorated function
         self.python_options = OrderedDict(options)
@@ -148,63 +144,73 @@ class Clizer(object):
             if v is True:
                 cls._write_error("Default value for boolean option %r must be 'False'" % k)
 
-    def override_defaults_from_environ(self, options):
+    def eval_option_value(self, option):
+        """ Evaluates an option
+        :param option: a string
+        :return: an object of type str, bool, int, float or list
+        """
+        try:
+            value = eval(option, {}, {})
+        except (SyntaxError, NameError, TypeError):
+            return option
+        if type(value) in (str, bool, int, float):
+            return value
+        elif type(value) in (list, tuple):
+            for v in value:
+                if type(v) not in (str, bool, int, float):
+                    self._write_error("Value of element of list object has wrong type %s" % v)
+            return value
+        return option
+
+    def get_options_from_environ(self, options):
         prefix = self.variables.get('CLINGON_PREFIX')
         if prefix:
-            for k in list(options):
-                default = os.environ.get(prefix + '_' + k.upper(), None)
-                if default is not None:
-                    try:
-                        default = eval(default, {}, {})
-                    except (SyntaxError, NameError):
-                        pass
-                    options[k] = default
+            for k in list(self.python_options):
+                env_option = os.environ.get(prefix + '_' + k.upper(), None)
+                if env_option is not None:
+                    options[k] = self.eval_option_value(env_option)
 
-    def override_defaults_from_file(self, options):
+    def get_options_from_file(self, options):
         """
-        Search and read a configuration file to override defaults.
+        Search and read a configuration file to override options.
         Available formats are python, yaml and json (file extension rules).
         By default, there is no configuration file and this method exits immediately.
         To define a configuration file, use:
-        - variable DEFAULTS_FILE,
-        - optional special parameter --defaults_file
+        - variable OPTIONS_FILE,
+        - optional special parameter --options_file
         search order is:
         - hardcoded if file is an absolute path,
-        - hardcoded path in variable DEFAULTS_PATH if existing,
+        - hardcoded path in variable OPTIONS_PATH if existing,
         - local directory,
         - ~/.clingon/,
         - /etc/clingon/,
         If a configuration file is found, sets the variable
-        defaults_path_file to effective_path/effective_file.
+        options_file_path to effective_path/effective_file.
         """
-        defaults_file = options.get('defaults_file',  self.variables.get('DEFAULTS_FILE'))
-        if not defaults_file:
-            self.variables['defaults_path_file'] = None
+        options_file = self.python_options.get('options_file') or self.variables.get('OPTIONS_FILE')
+        if not options_file:
+            self.variables['options_file_path'] = None
             return
-        defaults_path = self.variables.get('DEFAULTS_PATH')
-        defaults, defaults_path_file = None, None
+        options_path = self.variables.get('OPTIONS_PATH')
+        options_dict, options_file_path = None, None
         try:
-            if defaults_path or os.path.isabs(defaults_file):
-                defaults_path_file, defaults = read_configuration(defaults_file, defaults_path)
+            if options_path or os.path.isabs(options_file):
+                options_file_path, options_dict = read_configuration(options_file, options_path)
             else:
                 for path in (os.getcwd(), os.path.expanduser('~/.clingon'), '/etc/clingon/'):
                     try:
-                        defaults_path_file, defaults = read_configuration(defaults_file, path)
+                        options_file_path, options_dict = read_configuration(options_file, path)
                         break
                     except RuntimeError as e:
                         error = e
         except (RuntimeError, TypeError) as e:
             self._write_error(str(e))
-        self.variables['defaults_path_file'] = defaults_path_file
-        if defaults:
-            for k in list(options):
-                default = defaults.get(k)
+        self.variables['options_file_path'] = options_file_path
+        if options_dict:
+            for k in list(self.python_options):
+                default = options_dict.get(k)
                 if default is not None:
-                    try:
-                        default = eval(default, {}, {})
-                    except (SyntaxError, NameError, TypeError):
-                        pass
-                    options[k] = default
+                    options[k] = self.eval_option_value(default)
         else:
             self._write_error(str(error))
 
@@ -224,6 +230,12 @@ class Clizer(object):
                             (self._get_variable('VERSION'), source, sys.version.split()[0]), exit=False)
 
     def start(self, param_string=None):
+        """ Parses command line parameters
+            A string can be passed to simulate a cli for test purpose
+        """
+        external_opt = {}
+        self.get_options_from_environ(external_opt)
+        self.get_options_from_file(external_opt)
         # construct optional args, required args and variable args as we find then in the command line
         optargs = {}
         reqargs, varargs = [], []
@@ -313,6 +325,7 @@ class Clizer(object):
             raise RunnerErrorWithUsage("Too few parameters (%d required)" % len(self.reqargs))
         # merge required, optional args and options in allargs
         options = OrderedDict(self.python_options)
+        options.update(external_opt)
         options.update(optargs)
         allargs = reqargs
         allargs.extend(options.values())
@@ -403,7 +416,10 @@ class Clizer(object):
         options = self._print_usage('\n  ', file=sys.stdout)
         if self.docstring:
             print()
-            doc_string = self.docstring.format(**self.variables)
+            try:
+                doc_string = self.docstring.format(**self.variables)
+            except KeyError:
+                doc_string = self.docstring
             for doc in doc_string.split('\n'):
                 doc = doc.strip()
                 if len(doc) > 2:

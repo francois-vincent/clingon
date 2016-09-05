@@ -95,16 +95,17 @@ def read_configuration(file, path=None):
         raise RuntimeError("File %s not found" % file)
     _, ext = os.path.splitext(file)
     if ext == '.py':
-        defaults = {}
-        execfile(file, {}, defaults)
+        options = {}
+        with open(file, "rb") as f:
+            exec(compile(f.read(), file, 'exec'), {}, options)
     elif ext in ('.yml', '.yaml'):
         import yaml
         with open(file, 'r') as f:
-            defaults = yaml.load(f)
+            options = yaml.load(f)
     elif ext == '.json':
         import simplejson as json
         with open(file, 'r') as f:
-            defaults = json.load(f)
+            options = json.load(f)
     else:
         raise TypeError("Unknown file format %s" % file)
-    return file, defaults
+    return file, options

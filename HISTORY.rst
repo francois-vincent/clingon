@@ -3,6 +3,15 @@
 History
 -------
 
+0.3.0 (2016-08-26)
+---------------------
+
+* small functional change:
+  There is no more options default values from environment variables and configuration files.
+  Options default values are set once and only once into the decorated function definition.
+  Instead, options runtime values are set from environment variables, configuration files and cli,
+  in this order of priority (env vars have least priority, cli has highest).
+
 
 0.2.0 (2016-07-20)
 ---------------------
