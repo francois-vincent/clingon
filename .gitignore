@@ -1,41 +1,33 @@
+__pycache__/
 *.py[cod]
 
 # C extensions
 *.so
 
-# Packages
-*.egg
-*.egg-info
-dist
-build
-.eggs
-parts
-bin
-var
-sdist
-develop-eggs
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
 .installed.cfg
-lib
-lib64
+*.egg
+clingon-*/
 
-# Installer logs
-pip-log.txt
+# virtualenv
+venv/
 
-# Unit test / coverage reports
-.coverage
-.tox
-nosetests.xml
-htmlcov
+# pytest
+.cache/
 
-# Translations
-*.mo
-
-# Pycharm
-.idea
-
-# Complexity
-output/*.html
-output/*/index.html
-
-# Sphinx
-docs/_build
+# pycharm
+.idea/
