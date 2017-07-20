@@ -88,7 +88,7 @@ class Clizer(object):
         self.func = func
         self.docstring = func.__doc__
         self.file = inspect.getfile(func)
-        self.variables = getattr(func, 'variables', {})
+        self._variables = getattr(func, '_variables', {})
         argspec = inspect.getargspec(func)
         # do not allow keywords
         if argspec.keywords:
@@ -163,7 +163,7 @@ class Clizer(object):
         return option
 
     def get_options_from_environ(self, options):
-        prefix = self.variables.get('CLINGON_PREFIX')
+        prefix = self._variables.get('CLINGON_PREFIX')
         if prefix:
             for k in list(self.python_options):
                 env_option = os.environ.get(prefix + '_' + k.upper(), None)
@@ -187,11 +187,11 @@ class Clizer(object):
         If a configuration file is found, sets the variable
         options_file_path to effective_path/effective_file.
         """
-        options_file = self.python_options.get('options_file') or self.variables.get('OPTIONS_FILE')
+        options_file = self.python_options.get('options_file') or self._variables.get('OPTIONS_FILE')
         if not options_file:
-            self.variables['options_file_path'] = None
+            self._variables['options_file_path'] = None
             return
-        options_path = self.variables.get('OPTIONS_PATH')
+        options_path = self._variables.get('OPTIONS_PATH')
         options_dict, options_file_path = None, None
         try:
             if options_path or os.path.isabs(options_file):
@@ -205,7 +205,7 @@ class Clizer(object):
                         error = e
         except (RuntimeError, TypeError) as e:
             self._write_error(str(e))
-        self.variables['options_file_path'] = options_file_path
+        self._variables['options_file_path'] = options_file_path
         if options_dict:
             for k in list(self.python_options):
                 default = options_dict.get(k)
@@ -215,13 +215,13 @@ class Clizer(object):
             self._write_error(str(error))
 
     def _eval_variables(self):
-        """evaluates variables, especially those that are callable
+        """evaluates callable _variables
         """
-        for k, v in listitems(self.variables):
-            self.variables[k] = v() if hasattr(v, '__call__') else v
+        for k, v in listitems(self._variables):
+            self._variables[k] = v() if hasattr(v, '__call__') else v
 
     def _get_variable(self, key):
-        return self.variables.get(key)
+        return self._variables.get(key)
 
     def _print_version(self):
         source = os.path.dirname(self.file)
@@ -417,7 +417,7 @@ class Clizer(object):
         if self.docstring:
             print()
             try:
-                doc_string = self.docstring.format(**self.variables)
+                doc_string = self.docstring.format(**self._variables)
             except KeyError:
                 doc_string = self.docstring
             for doc in doc_string.split('\n'):
@@ -474,9 +474,9 @@ def clize(*args, **kwargs):
 
 def set_variables(**kwargs):
     def f(x):
-        if not hasattr(x, 'variables'):
-            x.variables = {}
-        x.variables.update(kwargs)
+        if not hasattr(x, '_variables'):
+            x._variables = {}
+        x._variables.update(kwargs)
         return x
 
     return f
@@ -485,13 +485,14 @@ def set_variables(**kwargs):
 def make_script(python_script, target_path='', target_name='', user=False, make_link=False,
                 force=False, remove=False, no_check_shebang=False, no_check_path=False):
     """v{VERSION}
-    This script makes a command line script out of a python file.
+    This script makes a command line script out of a python script.
     For example, 'clingon script.py' will copy or symlink script.py
     (without the .py extension) to:
     - <python-exe-path>/script (default),
     - <target-path>/script if --target-path is specfied,
     - ~/bin/script if --user is specified,
     and then set the copy / symlink as executable.
+    See https://github.com/francois-vincent/clingon
     """
     if user and target_path:
         raise RunnerErrorWithUsage("You cannot specify --path and --user at the same time")
