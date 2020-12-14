@@ -23,7 +23,7 @@ clingon.DELAY_EXECUTION = True
 
 clingon.DEBUG = False
 
-test_version = '0.3.0'
+test_version = '0.3.1'
 
 # ---------- here are decorated functions under test -------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

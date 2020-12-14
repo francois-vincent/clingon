@@ -25,7 +25,7 @@ import textwrap
 
 from clingon.utils import read_configuration
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
@@ -136,7 +136,7 @@ class Clizer(object):
                 self.options_aliases[x] = new_alias
         if DEBUG:
             print('clize default parameters:',
-                  self.reqargs + options.values() + (['*' + self.varargs] if self.varargs else []))
+                  self.reqargs + list(options.values()) + (['*' + self.varargs] if self.varargs else []))
 
     @classmethod
     def _check_booleans(cls, options):
