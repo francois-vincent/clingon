@@ -4,10 +4,10 @@ from __future__ import print_function
 import mock
 
 try:
+    import unittest
+except ImportError:
     # for py26
     import unittest2 as unittest
-except ImportError:
-    import unittest
 try:
     from collections import OrderedDict
 except ImportError:
@@ -23,7 +23,7 @@ clingon.DELAY_EXECUTION = True
 
 clingon.DEBUG = False
 
-test_version = '0.3.1'
+test_version = '0.3.2'
 
 # ---------- here are decorated functions under test -------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

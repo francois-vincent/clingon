@@ -12,7 +12,10 @@ from __future__ import print_function, absolute_import
 from future.utils import listitems, iteritems
 from past.builtins import basestring
 
-from collections import Sequence
+try:
+    from collections.abc import Sequence
+except ImportError:
+    from collections import Sequence
 
 try:
     from collections import OrderedDict
@@ -25,7 +28,7 @@ import textwrap
 
 from clingon.utils import read_configuration
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 DEBUG = False
 DELAY_EXECUTION = False
 SYSTEM_EXIT_ERROR_CODE = 1
