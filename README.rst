@@ -8,13 +8,13 @@
 .. image:: https://codecov.io/github/francois-vincent/clingon/coverage.svg?branch=master
    :target: https://codecov.io/github/francois-vincent/clingon
 
-.. image:: https://pypip.in/version/clingon/badge.svg
+.. image:: https://img.shields.io/pypi/v/clingon.svg
    :target: https://pypi.python.org/pypi/clingon
 
-.. image:: https://pypip.in/py_versions/clingon/badge.svg
+.. image:: https://img.shields.io/pypi/pyversions/clingon.svg
    :target: https://pypi.python.org/pypi/clingon/
 
-.. image:: https://pypip.in/download/clingon/badge.svg
+.. image:: https://img.shields.io/pypi/dm/clingon.svg
    :target: https://pypi.python.org/pypi/clingon/
 
 
